@@ -32,8 +32,8 @@ function checkDatesinvalid(firstDate, secondDate) {
     newDateFormEL.reset();
     return true;
   }
-//  return false;
-//}
+  return false;
+}
 
 
 
