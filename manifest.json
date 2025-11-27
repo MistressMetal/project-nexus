@@ -19,6 +19,6 @@
       "src": "icons/large.png",
       "sizes": "512x512"
     }
-  ]
+  ],
   "display": "standalone"
 }
