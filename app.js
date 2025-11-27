@@ -14,9 +14,9 @@ newDateFormEL.addEventListener("submit", (event) => {
   const firstDate = firstDateInputEL.value;
   const secondDate = secondDateInputEL.value;
   // Check if the dates are invalid
-//  if (checkDatesInvalid(firstDate, secondDate)) {
-//    return;
-//  }
+  if (checkDatesInvalid(firstDate, secondDate)) {
+    return;
+  }
 
   // store it client side
   storeNewDates(firstDate, secondDate);
@@ -27,11 +27,11 @@ newDateFormEL.addEventListener("submit", (event) => {
 });
 
 
-//function checkDatesinvalid(firstDate, secondDate) {
-//  if(!firstDate || !secondDate || firstDate > secondDate) {
-//    newDateFormEL.reset();
-//    return true;
-//  }
+function checkDatesinvalid(firstDate, secondDate) {
+  if(!firstDate || !secondDate || firstDate > secondDate) {
+    newDateFormEL.reset();
+    return true;
+  }
 //  return false;
 //}
 
@@ -54,6 +54,8 @@ function getAllStoredDates() {
 
   // default to empty array if no data is found
   const dates = data ? JSON.parse(data) : [];
+  console.dir(dates);
+  console.log(dates);
 
   return dates;
 }
@@ -62,6 +64,7 @@ const pastDateContainer = document(getElementById("past-dates");
 
 function renderPastDates() {
   //get parsed array
+  const pastDateHeader = document.createElement("h2");
   const dates = getAllStoredDates();
 
   if(dates.length === 0) {
@@ -70,8 +73,6 @@ function renderPastDates() {
 
   // clear the list
   pastDateContainer.textContent = "";
-
-  const pastDateHeader = document.createElement("h2");
   pastDateHeader.textContent = "Past Dates";
 
   //loop and render
@@ -80,7 +81,7 @@ function renderPastDates() {
     dateEL.textContent = From ${formatDate(
       date.firstDate,
     )} to ${formatDate(date.secondDate)};
-    pastDateList.appendChile(dateEL);
+    pastDateList.appendChild(dateEL);
   });
 
   pastDateContainer.appendChild(pastDateHeader);
