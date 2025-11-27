@@ -1,86 +1,61 @@
-// form constants
 const newDateFormEL = document.getElementsByTagName("form")[0];
 const firstDateInputEL = document.getElementById("first-date");
 const secondDateInputEL = document.getElementById("second-date");
-const STORAGE_KEY = "dates-tracker";
+const pastDateContainer = document.getElementById("past-dates");
 
+// Add the storage key as an app-wide constant
+const STORAGE_KEY = "date-tracker";
 
-
-// get the form submissions
+// Listen to form submissions.
 newDateFormEL.addEventListener("submit", (event) => {
-  // prevent the form from submitting to the server
   event.preventDefault();
-  // get dates
   const firstDate = firstDateInputEL.value;
   const secondDate = secondDateInputEL.value;
-  // Check if the dates are invalid
   if (checkDatesInvalid(firstDate, secondDate)) {
     return;
   }
-
-  // store it client side
-  storeNewDates(firstDate, secondDate);
-
-  // refresh
+  storeNewDate(firstDate, secondDate);
   renderPastDates();
   newDateFormEL.reset();
 });
 
-
-function checkDatesinvalid(firstDate, secondDate) {
-  if(!firstDate || !secondDate || firstDate > secondDate) {
+function checkDatesInvalid(firstDate, secondDate) {
+  if (!firstDate || !secondDate || firstDate > secondDate) {
     newDateFormEL.reset();
     return true;
   }
   return false;
 }
 
-
-
 function storeNewDate(firstDate, secondDate) {
-  // get from storage;
-  const dates = getAllStoredDates();
-  // add new date
-  dates.push({ firstDate, secondDate });
-  //sort
-  dates.sort((a, b) => new Date(b.firstDate) - new Date(a.firstDate));
-
-  //stor back into storage
-  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(dates));
+  const dateSet = getAllStoredDates();
+  dateSet.push({ firstDate, secondDate });
+  dateSet.sort((a, b) => new Date(b.firstDate) - new Date(a.firstDate));
+  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(dateSet));
 }
 
 function getAllStoredDates() {
   const data = window.localStorage.getItem(STORAGE_KEY);
-
-  // default to empty array if no data is found
-  const dates = data ? JSON.parse(data) : [];
-  console.dir(dates);
-  console.log(dates);
-
-  return dates;
+  const dateSet = data ? JSON.parse(data) : [];
+  console.dir(dateSet);
+  console.log(dateSet);
+  return dateSet;
 }
 
-const pastDateContainer = document(getElementById("past-dates");
-
 function renderPastDates() {
-  //get parsed array
   const pastDateHeader = document.createElement("h2");
-  const dates = getAllStoredDates();
-
-  if(dates.length === 0) {
+  const pastDateList = document.createElement("ul");
+  const dateSet = getAllStoredDates();
+  if (dateSet.length === 0) {
     return;
   }
-
-  // clear the list
   pastDateContainer.textContent = "";
   pastDateHeader.textContent = "Past Dates";
-
-  //loop and render
-  dates.forEach((date) => {
+  dateSet.forEach((period) => {
     const dateEL = document.createElement("li");
-    dateEL.textContent = From ${formatDate(
-      date.firstDate,
-    )} to ${formatDate(date.secondDate)};
+    dateEL.textContent = `From ${formatDate(
+      dateSet.firstDate,
+    )} to ${formatDate(period.secondDate)}`;
     pastDateList.appendChild(dateEL);
   });
 
@@ -90,10 +65,7 @@ function renderPastDates() {
 
 function formatDate(dateString) {
   const date = new Date(dateString);
-  return date.toLocaleDateString("en-us", { timeZone: "UTC" });
+  return date.toLocaleDateString("en-US", { timeZone: "UTC" });
 }
 
 renderPastDates();
-
-  
-  
