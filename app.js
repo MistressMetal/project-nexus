@@ -1,15 +1,10 @@
-function checkDatesinvalid(firstDate, secondDate) {
-  if(!firstDate || !secondDate || firstDate > secondDate) {
-    newDateFormEL.reset();
-    return true;
-  }
-  return false;
-}
-
 // form constants
 const newDateFormEL = document.getElementsByTagName("form")[0];
 const firstDateInputEL = document.getElementById("first-date");
 const secondDateInputEL = document.getElementById("second-date");
+const STORAGE_KEY = "dates-tracker";
+
+
 
 // get the form submissions
 newDateFormEL.addEventListener("submit", (event) => {
@@ -19,9 +14,9 @@ newDateFormEL.addEventListener("submit", (event) => {
   const firstDate = firstDateInputEL.value;
   const secondDate = secondDateInputEL.value;
   // Check if the dates are invalid
-  if (checkDatesInvalid(firstDate, secondDate)) {
-    return;
-  }
+//  if (checkDatesInvalid(firstDate, secondDate)) {
+//    return;
+//  }
 
   // store it client side
   storeNewDates(firstDate, secondDate);
@@ -32,7 +27,15 @@ newDateFormEL.addEventListener("submit", (event) => {
 });
 
 
-const STORAGE_KEY = "dates-tracker";
+//function checkDatesinvalid(firstDate, secondDate) {
+//  if(!firstDate || !secondDate || firstDate > secondDate) {
+//    newDateFormEL.reset();
+//    return true;
+//  }
+//  return false;
+//}
+
+
 
 function storeNewDate(firstDate, secondDate) {
   // get from storage;
