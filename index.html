@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>Project Nexus</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <h1>Chapter Hub</h1>
+    <form>
+      <fieldset>
+        <legend>Enter two dates</legend>
+        <p>
+          <label for="first-date">First date</label>
+          <input type="date" id="first-date" required />
+        </p>
+        <p>
+          <label for="second-date">Second date</label>
+          <input type="date" id="start-date" required />
+        </p>
+      </fieldset>
+      <p>
+        <button type="submit">Add Dates</button>
+      </p>
+    </form>
+    <section id="past-dates"></section>
+    <script src="app.js" defer></script>
+  </body>
+</html>
