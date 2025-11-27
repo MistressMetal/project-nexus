@@ -1,0 +1,24 @@
+{
+  "name": "Starter for Project Nexus",
+  "short_name": "Dates",
+  "description": "track dates and record them locally"
+  "start_url": "/",
+  "theme_color": "#eeffee"
+  "background_color": "#eeffee"
+  "icons": [
+    {
+      "src": "icons/tiny.png"
+      "sizes": "48x48"
+    },
+    {
+      "src": "icons/small.png",
+      "sizes": "72x72 96x96 128x128 256x256",
+      "purpose": "maskable"
+    },
+    {
+      "src": "icons/large.png",
+      "sizes": "512x512"
+    }
+  ]
+  "display": "standalone"
+}
