@@ -2,7 +2,8 @@
   "name": "Starter for Project Nexus",
   "short_name": "Dates",
   "description": "track dates and record them locally",
-  "start_url": "/LiveSite/",
+  "start_url": "/project-nexus/",
+  "scope": "/project-nexus/", 
   "theme_color": "#eeffee",
   "background_color": "#eeffee",
   "icons": [
