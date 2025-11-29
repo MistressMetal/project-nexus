@@ -184,7 +184,7 @@ app.post('/api/generate-login-link', (req, res) => {
         }
 
         // In production, send this link via email
-        const loginLink = `https://localhost:${port}/login/${token}`;
+        const loginLink = `https://project-nexus-ppxs.onrender.com/login/${token}`;
         res.json({ 
           message: 'Login link generated! (In production, this would be emailed)',
           loginLink: loginLink,
@@ -403,8 +403,8 @@ app.get('/admin-login', (req, res) => {
 
 // Start server
 app.listen(port, () => {
-  console.log(`Server running at https://localhost:${port}`);
-  console.log(`Admin login at https://localhost:${port}/admin-login`);
+  console.log(`Server running at https://project-nexus-ppxs.onrender.com/`);
+  console.log(`Admin login at https://project-nexus-ppxs.onrender.com/admin-login`);
 });
 
 // Close database on exit
