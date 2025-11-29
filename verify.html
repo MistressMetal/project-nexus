@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Verifying Login...</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .verify-container {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      padding: 60px 40px;
+      max-width: 500px;
+      width: 100%;
+      text-align: center;
+    }
+
+    .spinner {
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid #667eea;
+      border-radius: 50%;
+      width: 50px;
+      height: 50px;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 30px;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    h1 {
+      color: #333;
+      margin-bottom: 10px;
+    }
+
+    p {
+      color: #666;
+      margin-bottom: 20px;
+    }
+
+    .success {
+      color: #28a745;
+      font-size: 48px;
+      margin-bottom: 20px;
+      display: none;
+    }
+
+    .success.show {
+      display: block;
+    }
+
+    .error {
+      color: #dc3545;
+      font-size: 48px;
+      margin-bottom: 20px;
+      display: none;
+    }
+
+    .error.show {
+      display: block;
+    }
+
+    button {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      padding: 12px 30px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: 500;
+      margin-top: 20px;
+      display: none;
+    }
+
+    button.show {
+      display: inline-block;
+    }
+
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+    }
+  </style>
+</head>
+<body>
+  <div class="verify-container">
+    <div class="spinner" id="spinner"></div>
+    <div class="success" id="successIcon">✓</div>
+    <div class="error" id="errorIcon">✗</div>
+    
+    <h1 id="title">Verifying your login...</h1>
+    <p id="message">Please wait while we authenticate you.</p>
+    
+    <button id="continueBtn" onclick="redirect()">Continue to Portal</button>
+  </div>
+
+  <script>
+    let isAdmin = false;
+
+    async function verifyToken() {
+      const pathParts = window.location.pathname.split('/');
+      const token = pathParts[pathParts.length - 1];
+
+      if (!token) {
+        showError('No login token found');
+        return;
+      }
+
+      try {
+        const response = await fetch(`/api/verify-token/${token}`);
+        const data = await response.json();
+
+        if (response.ok) {
+          isAdmin = data.member.role === 'admin';
+          showSuccess(data.member.name, isAdmin);
+        } else {
+          showError(data.error);
+        }
+      } catch (error) {
+        showError('Failed to verify login. Please try again.');
+      }
+    }
+
+    function showSuccess(name, admin) {
+      document.getElementById('spinner').style.display = 'none';
+      document.getElementById('successIcon').classList.add('show');
+      document.getElementById('title').textContent = 'Login Successful!';
+      document.getElementById('message').textContent = `Welcome back, ${name}! ${admin ? 'Redirecting to admin panel...' : 'Redirecting to member portal...'}`;
+      document.getElementById('continueBtn').classList.add('show');
+      
+      // Auto redirect after 2 seconds
+      setTimeout(redirect, 2000);
+    }
+
+    function showError(errorMsg) {
+      document.getElementById('spinner').style.display = 'none';
+      document.getElementById('errorIcon').classList.add('show');
+      document.getElementById('title').textContent = 'Verification Failed';
+      document.getElementById('message').textContent = errorMsg;
+      
+      // Show button to go back
+      const btn = document.getElementById('continueBtn');
+      btn.textContent = 'Back to Login';
+      btn.classList.add('show');
+    }
+
+    function redirect() {
+      if (isAdmin) {
+        window.location.href = '/admin';
+      } else {
+        window.location.href = '/';
+      }
+    }
+
+    // Start verification on page load
+    verifyToken();
+  </script>
+</body>
+</html>
