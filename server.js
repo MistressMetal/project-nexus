@@ -22,8 +22,8 @@ app.use(session({
   saveUninitialized: false,
   cookie: {
     maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
-    httpOnly: true,
-    secure: false // Set to true if using HTTPS
+//    httpOnly: true,
+    secure: true // Set to true if using HTTPS
   }
 }));
 
@@ -184,7 +184,7 @@ app.post('/api/generate-login-link', (req, res) => {
         }
 
         // In production, send this link via email
-        const loginLink = `http://localhost:${port}/login/${token}`;
+        const loginLink = `https://localhost:${port}/login/${token}`;
         res.json({ 
           message: 'Login link generated! (In production, this would be emailed)',
           loginLink: loginLink,
@@ -403,8 +403,8 @@ app.get('/admin-login', (req, res) => {
 
 // Start server
 app.listen(port, () => {
-  console.log(`Server running at http://localhost:${port}`);
-  console.log(`Admin login at http://localhost:${port}/admin-login`);
+  console.log(`Server running at https://localhost:${port}`);
+  console.log(`Admin login at https://localhost:${port}/admin-login`);
 });
 
 // Close database on exit
