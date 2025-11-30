@@ -9,6 +9,10 @@ const SQLiteStore = require('connect-sqlite3')(session);
 const app = express();
 const port = process.env.PORT || 3000;
 const BASE_URL = process.env.BASE_URL || `http://localhost:${port}`;
+const isProduction = process.env.NODE_ENV === 'production';
+
+// CRITICAL: Trust proxy when behind Render.com's load balancer
+app.set('trust proxy', 1);
 
 // Middleware
 app.use(express.json());
@@ -18,13 +22,14 @@ app.use(express.static('public'));
 // Session configuration
 app.use(session({
   store: new SQLiteStore({ db: 'sessions.db' }),
-  secret: 'your-secret-key-change-this-in-production',
+  secret: process.env.SESSION_SECRET || 'your-secret-key-change-this-in-production',
   resave: false,
   saveUninitialized: false,
   cookie: {
     maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
-//    httpOnly: true,
-    secure: true // Set to true if using HTTPS
+    httpOnly: true,
+    secure: isProduction, // true only in production (HTTPS)
+    sameSite: isProduction ? 'none' : 'lax' // 'none' required for cross-site in production
   }
 }));
 
@@ -226,6 +231,11 @@ app.get('/api/verify-token/:token', (req, res) => {
           req.session.userId = member.id;
           req.session.email = member.email;
           req.session.role = member.role;
+          req.session.save((err) => {
+            if (err) {
+              console.error('Session save error:', err);
+              return res.status(500).json({ error: 'Failed to create session' });
+            };
 
           res.json({ 
             success: true,
