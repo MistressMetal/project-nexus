@@ -7,7 +7,8 @@ const session = require('express-session');
 const SQLiteStore = require('connect-sqlite3')(session);
 
 const app = express();
-const port = 3000;
+const port = process.env.PORT || 3000;
+const BASE_URL = process.env.BASE_URL || `http://localhost:${port}`;
 
 // Middleware
 app.use(express.json());
@@ -184,8 +185,8 @@ app.post('/api/generate-login-link', (req, res) => {
         }
 
         // In production, send this link via email
-       const loginLink =  https://project-nexus-ppxs.onrender.com/login/${token}`;
-       // const loginLink = `https://localhost:${port}/login/${token}`;
+       const loginLink = `${BASE_URL}/login/${token}`;
+        // const loginLink = `https://localhost:${port}/login/${token}`;
         res.json({ 
           message: 'Login link generated! (In production, this would be emailed)',
           loginLink: loginLink,
@@ -412,9 +413,9 @@ app.get('/sw.js', (req, res) => {
 });
 
 // Start server
-app.listen(port, () => {
-  console.log(`Server running at https://localhost:${port}`);
-  console.log(`Admin login at https://localhost:${port}/admin-login`);
+app.listen(port, '0.0.0.0', () => {
+  console.log(`Server running at ${BASE_URL}`);
+  console.log(`Admin login at ${BASE_URL}/admin-login`);
 });
 
 // Close database on exit
