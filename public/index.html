@@ -4,8 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Club Member Portal</title>
-    <link rel="stylesheet" href="../style.css" />
-    <link rel="manifest" href="../manifest.json" />
+    <link rel="stylesheet" href="style.css" />
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#FFED00" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Project Nexus" />
+    <link rel="apple-touch-icon" href="/icons/small.png" />
 </head>
 <body>
     <div class="container">
@@ -156,14 +161,14 @@
                 if (response.ok) {
                     showMessage(data.message, 'success');
                     document.getElementById('magicLinkDisplay').innerHTML = `
-                <div class="magic-link">
-                  <strong>🔗 Your Login Link:</strong><br>
-                  <a href="${data.loginLink}" target="_blank">${data.loginLink}</a>
-                  <p style="margin-top: 10px; font-size: 12px;">
-                    In production, this would be sent to your email. Click the link to log in.
-                  </p>
-                </div>
-              `;
+                    <div class="magic-link">
+                      <strong>🔗 Your Login Link:</strong><br>
+                      <a href="${data.loginLink}" target="_blank">${data.loginLink}</a>
+                      <p style="margin-top: 10px; font-size: 12px;">
+                        In production, this would be sent to your email. Click the link to log in.
+                      </p>
+                    </div>
+                  `;
                 } else {
                     showMessage(data.error, 'error');
                 }
@@ -212,6 +217,30 @@
         // Check authentication on page load
         checkAuth();
     </script>
+    <script>
+        // Register service worker
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/service-worker.js')
+                    .then((registration) => {
+                        console.log('Service Worker registered successfully:', registration.scope);
+                    })
+                    .catch((error) => {
+                        console.log('Service Worker registration failed:', error);
+                    });
+            });
+        }
+
+        // Detect if app is installed
+        window.addEventListener('beforeinstallprompt', (e) => {
+            console.log('PWA install prompt available');
+            // You can save this event and trigger it later with a custom button
+        });
+
+        // Detect if running as installed PWA
+        if (window.matchMedia('(display-mode: standalone)').matches) {
+            console.log('Running as installed PWA');
+        }
+    </script>
 </body>
 </html>
-
