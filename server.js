@@ -184,7 +184,8 @@ app.post('/api/generate-login-link', (req, res) => {
         }
 
         // In production, send this link via email
-        const loginLink = `https://localhost:${port}/login/${token}`;
+       const loginLink =  https://project-nexus-ppxs.onrender.com/login/${token}`;
+       // const loginLink = `https://localhost:${port}/login/${token}`;
         res.json({ 
           message: 'Login link generated! (In production, this would be emailed)',
           loginLink: loginLink,
@@ -407,7 +408,7 @@ app.get('/manifest.json', (req, res) => {
 
 app.get('/sw.js', (req, res) => {
     res.set('Content-Type', 'application/javascript');
-    res.sendFile(path.join(__dirname, 'service-worker.js'));
+    res.sendFile(path.join(__dirname, 'sw.js'));
 });
 
 // Start server
