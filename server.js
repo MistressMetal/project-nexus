@@ -231,11 +231,6 @@ app.get('/api/verify-token/:token', (req, res) => {
           req.session.userId = member.id;
           req.session.email = member.email;
           req.session.role = member.role;
-          req.session.save((err) => {
-            if (err) {
-              console.error('Session save error:', err);
-              return res.status(500).json({ error: 'Failed to create session' });
-            };
 
           res.json({ 
             success: true,
