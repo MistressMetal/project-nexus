@@ -7,7 +7,12 @@
     "start": "node server.js",
     "dev": "nodemon server.js"
   },
-  "keywords": ["membership", "authentication", "express", "sqlite"],
+  "keywords": [
+    "membership",
+    "authentication",
+    "express",
+    "sqlite"
+  ],
   "author": "",
   "license": "ISC",
   "dependencies": {
@@ -18,5 +23,6 @@
   },
   "devDependencies": {
     "nodemon": "^3.0.1"
-  }
+  },
+  "type": "commonjs"
 }

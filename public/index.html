@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="style.css" />
     <link rel="manifest" href="/manifest.json" />
     <meta name="theme-color" content="#FFED00" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="Project Nexus" />
     <link rel="apple-touch-icon" href="/icons/small.png" />
@@ -24,8 +24,10 @@
             <!-- Authentication Section (shown when not logged in) -->
             <div id="authSection" class="auth-section">
                 <div class="tabs">
-                    <button class="tab active" onclick="switchTab('login')">Member Login</button>
-                    <button class="tab" onclick="switchTab('request')">Request Access</button>
+                <button class="tab active" onclick="switchTab('login')">Member Login</button>
+
+                <button class="tab" onclick="switchTab('request')">Request Access</button>
+
                 </div>
 
                 <!-- Login Tab -->
@@ -42,61 +44,100 @@
                         </form>
                         <div id="magicLinkDisplay"></div>
                     </div>
-                </div>
 
-                <!-- Request Access Tab -->
-                <div id="requestTab" class="tab-content">
-                    <div class="form-section">
-                        <h2>Request Club Access</h2>
-                        <p style="margin-bottom: 20px; color: #666;">Submit a request to join the club. Leadership will review your application.</p>
-                        <form id="requestForm">
-                            <div class="form-group">
-                                <label for="requestName">Full Name:</label>
-                                <input type="text" id="requestName" required>
-                            </div>
-                            <div class="form-group">
-                                <label for="requestEmail">Email Address:</label>
-                                <input type="email" id="requestEmail" required>
-                            </div>
-                            <div class="form-group">
-                                <label for="requestMessage">Why would you like to join? (optional):</label>
-                                <textarea id="requestMessage"></textarea>
-                            </div>
-                            <button type="submit">Submit Request</button>
-                        </form>
-                    </div>
+                    
                 </div>
             </div>
 
-            <!-- Member Section (shown when logged in) -->
-            <div id="memberSection" class="member-section">
-                <div class="dashboard-card">
-                    <h2>Welcome, <span id="memberName"></span>!</h2>
+            <!-- Request Access Tab -->
+            <div id="requestTab" class="tab-content">
+                <div class="form-section">
+                    <h2>Request Club Access</h2>
+                    <p style="margin-bottom: 20px; color: #666;">Submit a request to join the club. Leadership will review your application.</p>
+                    <form id="requestForm">
+                        <div class="form-group">
+                            <label for="requestName">Full Name:</label>
+                            <input type="text" id="requestName" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="requestEmail">Email Address:</label>
+                            <input type="email" id="requestEmail" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="requestMessage">Why would you like to join? (optional):</label>
+                            <textarea id="requestMessage"></textarea>
+                        </div>
+                        <button type="submit">Submit Request</button>
+                    </form>
                 </div>
-
-                <div class="dashboard-card">
-                    <h3>Member Resources</h3>
-                    <p style="margin-top: 10px; color: #666;">
-                        <ul>
-                            <li>Sign or view your member card</li>
-                            <li>Chapter Leadership / Organizer Information</li>
-                            <li>Chapter Updates</li>
-                            <li>Chapter Social Events</li>
-                            <li>Member Resource Center Information</li>
-                            <li>Chapter Facebook Page</li>
-                            <li>SEIU HCPA Updates</li>
-                        </ul>
-                    </p>
-                </div>
-
-                <button class="logout-btn" onclick="logout()">Logout</button>
             </div>
         </div>
+
+        <!-- Member Section (shown when logged in) -->
+        <div id="memberSection" class="member-section">
+            <div class="dashboard-card">
+                <h2>Welcome, <span id="memberName"></span>!</h2>
+            </div>
+            <p class="load" id="load">Firebase SDK loading&hellip;</p>
+            <p class="load" id="token"></p>
+
+            <div style="display: flex; justify-content: center">
+            <button id="requestToken">Request token</button>
+            </div>
+            <div class="dashboard-card">
+                <h3>Member Resources</h3>
+                <p style="margin-top: 10px; color: #666;">
+                    <div>
+                        <h3>Read Data</h3>
+                        <label for="announcementTypeFilter">Category of Announcement</label>
+                        <select name="announcementTypeFilter" id="announcementTypeFilter">
+                            <option value="all">All Announcements</option>
+                            <option value="unionUpdate">SEIU HCPA Update</option>
+                            <option value="chapterUpdate">Chapter Update</option>
+                            <option value="facilityUpdate">Facility Update</option>
+                            <option value="priorityUpdate">Priority</option>
+                            <option value="negotiationUpdate">Bargaining Update</option>
+                            <option value="socialActivity">Social Activities</option>
+                        </select>
+                        <br>
+    
+                        <button id="getAnnouncementsButton">Get Announcement</button>
+                        <ul id="announcement-list"></ul>
+                        </div>
+                    <ul>
+                        <li>Sign or view your member card</li>
+                          <p>If you have signed a card, this would provide a link to download or print it. If not, there would be the link to sign one.</p>
+                        <li>Chapter Leadership / Organizer Information</li>
+                          <p>Either a list of leadership, or a link to a maintained GoogleSheet, etc.</p>
+                        <li>Chapter Updates</li>
+                        <li>Chapter Social Events</li>
+                        <li>Member Resource Center Information</li>
+                          <p>The <href src="https://seiuhcpa.org/resources/help/">Member Resource Center</href> is available to help solving workplace issues.</p>
+                          <p>In Pennsylvania: 1-800-252-3894</p>
+                          <p>Out of state: 412-222-9514</p>
+                        <li><href src="https://www.facebook.com/groups/307373739298431">Chapter Facebook Page</href></li>                          
+                        <li>SEIU HCPA Updates</li>
+                    </ul>
+                </p>
+            </div>
+
+            <button class="btn-logout" id="logoutBtn">Logout</button>
+        </div>
     </div>
-    <script>
-        if ("serviceWorker" in navigator) {
-            navigator.serviceWorker.register("sw.js");
+
+    <script src="app.js" type="module">   </script>
+<script>
+        // Detect if app is installed
+        window.addEventListener('beforeinstallprompt', (e) => {
+            console.log('PWA install prompt available');
+        });
+
+        // Detect if running as installed PWA
+        if (window.matchMedia('(display-mode: standalone)').matches) {
+            console.log('Running as installed PWA');
         }
+
+        
         function showMessage(text, type) {
             const message = document.getElementById('message');
             message.textContent = text;
@@ -106,7 +147,7 @@
             }, 5000);
         }
 
-        function switchTab(tab) {
+        window.switchTab = function(tab) {
             document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
             document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
 
@@ -145,6 +186,7 @@
             document.getElementById('memberName').textContent = user.name;
         }
 
+
         document.getElementById('loginForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const email = document.getElementById('loginEmail').value;
@@ -161,14 +203,14 @@
                 if (response.ok) {
                     showMessage(data.message, 'success');
                     document.getElementById('magicLinkDisplay').innerHTML = `
-                    <div class="magic-link">
-                      <strong>🔗 Your Login Link:</strong><br>
-                      <a href="${data.loginLink}" target="_blank">${data.loginLink}</a>
-                      <p style="margin-top: 10px; font-size: 12px;">
-                        In production, this would be sent to your email. Click the link to log in.
-                      </p>
-                    </div>
-                  `;
+                        <div class="magic-link">
+                          <strong>🔗 Your Login Link:</strong><br>
+                          <a href="${data.loginLink}" target="_blank">${data.loginLink}</a>
+                          <p style="margin-top: 10px; font-size: 12px;">
+                            Magic link provided here for demo use only. In production, access would be more secure.
+                          </p>
+                        </div>
+                      `;
                 } else {
                     showMessage(data.error, 'error');
                 }
@@ -203,7 +245,7 @@
                 showMessage('Error submitting request', 'error');
             }
         });
-
+        document.getElementById('logoutBtn')?.addEventListener('click', logout);
         async function logout() {
             try {
                 await fetch('/api/logout', { method: 'POST' });
@@ -217,30 +259,21 @@
         // Check authentication on page load
         checkAuth();
     </script>
-    <script>
-        // Register service worker
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('/service-worker.js')
-                    .then((registration) => {
-                        console.log('Service Worker registered successfully:', registration.scope);
-                    })
-                    .catch((error) => {
-                        console.log('Service Worker registration failed:', error);
-                    });
+    <script type="module">
+
+        async function getAnnouncements() {
+            const querySnapshot = await getDocs(query(collection(db, 'announcements'), orderBy('date','desc')));
+            const announcementList = document.getElementById('announcement-List');
+            announcementlist.innerHTML = '';
+
+            querySnapshot.forEach((doc) => {
+                const data = doc.data();
+                const listItem = document.createElement('il');
+                listItem.textContent = '${data.newAnnouncement}';
+                announcementList.appendChild(listItem);
             });
         }
-
-        // Detect if app is installed
-        window.addEventListener('beforeinstallprompt', (e) => {
-            console.log('PWA install prompt available');
-            // You can save this event and trigger it later with a custom button
-        });
-
-        // Detect if running as installed PWA
-        if (window.matchMedia('(display-mode: standalone)').matches) {
-            console.log('Running as installed PWA');
-        }
+window.logout=logout
     </script>
 </body>
 </html>
