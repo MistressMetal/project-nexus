@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Club Member Portal</title>
+    <title>Union Member Portal</title>
     <link rel="stylesheet" href="style.css" />
     <link rel="manifest" href="/manifest.json" />
     <meta name="theme-color" content="#FFED00" />
@@ -11,6 +11,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="Project Nexus" />
     <link rel="apple-touch-icon" href="/icons/small.png" />
+    <link rel="icon" type="image/x-icon" href="/public/icons/favicon.png">
 </head>
 <body>
     <div class="container">
@@ -52,8 +53,8 @@
             <!-- Request Access Tab -->
             <div id="requestTab" class="tab-content">
                 <div class="form-section">
-                    <h2>Request Club Access</h2>
-                    <p style="margin-bottom: 20px; color: #666;">Submit a request to join the club. Leadership will review your application.</p>
+                    <h2>Request Hub Access</h2>
+                    <p style="margin-bottom: 20px; color: #666;">Submit a request to join the Chapter Hub. Leadership will review your application.</p>
                     <form id="requestForm">
                         <div class="form-group">
                             <label for="requestName">Full Name:</label>
@@ -64,8 +65,8 @@
                             <input type="email" id="requestEmail" required>
                         </div>
                         <div class="form-group">
-                            <label for="requestMessage">Why would you like to join? (optional):</label>
-                            <textarea id="requestMessage"></textarea>
+                            <label for="requestMessage">Chapter:</label>
+                            <text id="requestMessage"></textarea>
                         </div>
                         <button type="submit">Submit Request</button>
                     </form>
@@ -78,45 +79,57 @@
             <div class="dashboard-card">
                 <h2>Welcome, <span id="memberName"></span>!</h2>
             </div>
-            <p class="load" id="load">Firebase SDK loading&hellip;</p>
-            <p class="load" id="token"></p>
-
             <div style="display: flex; justify-content: center">
-            <button id="requestToken">Request token</button>
+            <button id="requestToken">Receive Notifications?</button>
             </div>
+            <p style="color: red; font-size: 10px">Click this button to enable push notifications. It may give you an error the first time - press it again.</p>
+            <p style="color: red; font-size: 10px">Rather than a button, this would be a pop-up notification asking if you accept notifications. You only have to do this the first time you download the app.</p>
             <div class="dashboard-card">
-                <h3>Member Resources</h3>
-                <p style="margin-top: 10px; color: #666;">
-                    <div>
-                        <h3>Read Data</h3>
-                        <label for="announcementTypeFilter">Category of Announcement</label>
-                        <select name="announcementTypeFilter" id="announcementTypeFilter">
-                            <option value="all">All Announcements</option>
-                            <option value="unionUpdate">SEIU HCPA Update</option>
-                            <option value="chapterUpdate">Chapter Update</option>
-                            <option value="facilityUpdate">Facility Update</option>
-                            <option value="priorityUpdate">Priority</option>
-                            <option value="negotiationUpdate">Bargaining Update</option>
-                            <option value="socialActivity">Social Activities</option>
-                        </select>
+                <div>
+                    <h2>Recent Announcements</h2>
+                    <button id="getAnnouncementsButton">Get Announcements</button>
+                    <p style="margin-top: 10px; color: #666;"></p>
+                    <ul id="announcement-list"></ul>
+                    <p style="margin-top: 10px; color: #666;"></p>
+                    <p style="color: red; font-size: 10px"> These are intended to be shorter updates, that can be easily submitted by leadership, as opposed to the updates below which might be more involved to make. It's a little nebulous right now.</p>
+                    <p style="margin-top: 10px; color: #666;"></p>
+                    <select name="announcementTypeFilter" id="announcementTypeFilter">
+                        <option value="all">All Announcements</option>
+                        <option value="unionUpdate">SEIU HCPA Update</option>
+                        <option value="chapterUpdate">Chapter Update</option>
+                        <option value="facilityUpdate">Facility Update</option>
+                        <option value="priorityUpdate">Priority</option>
+                        <option value="negotiationUpdate">Bargaining Update</option>
+                        <option value="socialActivity">Social Activities</option>
+                    </select>
+                    <p style="margin-top: 10px; color: #666;">
                         <br>
-    
-                        <button id="getAnnouncementsButton">Get Announcement</button>
-                        <ul id="announcement-list"></ul>
-                        </div>
+                </div>
+                <p style="margin-top: 10px; color: #666;"></p>
+                <h2>Member Resources</h2>
+                <p style="margin-top: 10px; color: #666;">
+ 
                     <ul>
                         <li>Sign or view your member card</li>
-                          <p>If you have signed a card, this would provide a link to download or print it. If not, there would be the link to sign one.</p>
-                        <li>Chapter Leadership / Organizer Information</li>
-                          <p>Either a list of leadership, or a link to a maintained GoogleSheet, etc.</p>
-                        <li>Chapter Updates</li>
+                          <p style="color: red; font-size: 10px">If you have signed a card, this would provide a link to download or print it. If not, there would be the link to sign one.</p>
+                        <br>
+                          <li>Chapter Leadership / Organizer Information</li>
+                          <p style="color: red; font-size: 10px">Either a list of leadership, or a link to a maintained GoogleSheet, etc. with names, phone numbers, emails, whatever makes sense.</p>
+                          <br>
+                          <li>Chapter Updates</li>
+                          <br>
                         <li>Chapter Social Events</li>
+                        <br>
                         <li>Member Resource Center Information</li>
-                          <p>The <href src="https://seiuhcpa.org/resources/help/">Member Resource Center</href> is available to help solving workplace issues.</p>
+                          <p>The <a href="https://seiuhcpa.org/resources/help/">Member Resource Center</a> is available to help solving workplace issues.</p>
                           <p>In Pennsylvania: 1-800-252-3894</p>
                           <p>Out of state: 412-222-9514</p>
-                        <li><href src="https://www.facebook.com/groups/307373739298431">Chapter Facebook Page</href></li>                          
-                        <li>SEIU HCPA Updates</li>
+                          <p style="color: red; font-size: 10px">Eventually could include an online grievance form of some sort or a request for a call from the MRC, etc.</p>
+                          <br>
+                          <li><a href="https://www.facebook.com/groups/307373739298431">Chapter Facebook Page</a></li>                          
+                          <br>
+                          <li>SEIU HCPA Updates</li>
+                        <p style="color: red; font-size: 10px">This is updates for the broader union.</p>
                     </ul>
                 </p>
             </div>

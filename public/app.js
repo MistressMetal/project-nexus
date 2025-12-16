@@ -157,7 +157,7 @@ const messaging = getMessaging(app);
             
                 if (token) {
                     console.log('Token:', token);
-                    document.getElementById('token').textContent = token;
+//                    document.getElementById('token').textContent = token;
                     
                     // Save to database
                     await addDoc(collection(db, "fcmTokens"), {
@@ -178,6 +178,43 @@ const messaging = getMessaging(app);
     
     console.log('[SW] Firebase messaging service worker loaded');
     
+//Add announcements
+    document.getElementById('addAnnouncementButton').addEventListener('click', async () => {
+        const output = document.getElementById('announcementPosted');
+        const newAnnouncement = document.getElementById('newAnnouncement').value;
+        const postedBy = document.getElementById('postedBy').value;
+        const announcementTypeElement = document.getElementById('announcementType');
+        const announcementTypeIndex = announcementTypeElement.selectedIndex;
+        const announcementTypeOption = announcementTypeElement.options[announcementTypeIndex];
+        const announcementTypeText = announcementTypeOption.text;
+    
+        if (!newAnnouncement.trim()) {
+            output.innerHTML ='Please enter an announcement';
+            return;
+        }
+    
+        output.innerHTML = 'Announcment Posted!';
+        
+    
+        console.log('Button clicked, app:', app);
+        console.log('Button clicked, db:', db);
+        
+        try {
+          
+          const docRef = await addDoc(collection(db, "announcements"), {
+            message: newAnnouncement,
+            timestamp: new Date(),
+            postedBy: postedBy,
+            announcementType: announcementTypeText
+          });
+          
+          console.log('Success!');
+//          output.innerHTML = `✅ Success! Document ID: ${docRef.id}`;
+        } catch (error) {
+          output.innerHTML = `❌ Error: ${error.message}`;
+          console.error("Full error:", error);
+        }
+      });
 
 export {app};
 export {db};
@@ -185,6 +222,8 @@ export {db};
 // Expose functions to the global scope
 window.getAnnouncements = getAnnouncements;
 window.messaging = getMessaging(app);
+window.app=app
+window.db=db
 
 //window.requestPermission = requestPermission;
 
