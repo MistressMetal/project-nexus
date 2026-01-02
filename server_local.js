@@ -1,261 +1,271 @@
 // server.js - Backend with member authentication and admin controls
 const express = require('express');
-const sqlite3 = require('sqlite3').verbose();
+const { Pool } = require('pg');
+// const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
 const crypto = require('crypto');
 const session = require('express-session');
-const SQLiteStore = require('connect-sqlite3')(session);
+//const SQLiteStore = require('connect-sqlite3')(session);
+const pgSession = require('connect-pg-simple')(session);
 
 const app = express();
-const port = 3000;
-const BASE_URL = `http://localhost:${port}`;
+const port = process.env.PORT || 3000;
+const BASE_URL = process.env.BASE_URL || `http://localhost:${port}`;
+const isProduction = process.env.NODE_ENV === 'production';
 
-// Middleware
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-app.use(express.static('public'));
+app.set('trust proxy', 1);
 
-// Session configuration
-app.use(session({
-  store: new SQLiteStore({ db: 'sessions.db' }),
-  secret: 'your-secret-key-change-this-in-production',
-  resave: false,
-  saveUninitialized: false,
-  cookie: {
-    maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
-//    httpOnly: true,
-    secure: false // Set to true if using HTTPS
-  }
-}));
 
-// Initialize SQLite database
-const db = new sqlite3.Database('./database.db', (err) => {
+// Inititalize PostgreSQL
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: isProduction ? { rejectUnauthorized: false } : false
+});
+
+pool.query('SELECT NOW()', (err, res) => {
   if (err) {
-    console.error('Error opening database:', err);
+      console.error('Error connecting to database:', err);
   } else {
-    console.log('Connected to SQLite database');
-    
-    // Create members table
-    db.run(`CREATE TABLE IF NOT EXISTS members (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      email TEXT UNIQUE NOT NULL,
-      name TEXT NOT NULL,
-      role TEXT DEFAULT 'member',
-      status TEXT DEFAULT 'pending',
-      member_since DATETIME,
-      last_login DATETIME,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    )`);
-
-    // Create magic links table for authentication
-    db.run(`CREATE TABLE IF NOT EXISTS magic_links (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      email TEXT NOT NULL,
-      token TEXT UNIQUE NOT NULL,
-      expires_at DATETIME NOT NULL,
-      used INTEGER DEFAULT 0,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    )`);
-
-    // Create access requests table
-    db.run(`CREATE TABLE IF NOT EXISTS access_requests (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      email TEXT NOT NULL,
-      name TEXT NOT NULL,
-      message TEXT,
-      status TEXT DEFAULT 'pending',
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    )`);
-
-    // Create a default admin if none exists
-    db.get('SELECT * FROM members WHERE role = "admin"', [], (err, row) => {
-      if (!row) {
-        db.run(`INSERT INTO members (email, name, role, status, member_since) 
-                VALUES (?, ?, ?, ?, ?)`, 
-                ['admin@club.com', 'Admin User', 'admin', 'active', new Date().toISOString()],
-                (err) => {
-                  if (!err) {
-                    console.log('Default admin created: admin@club.com');
-                    console.log('Visit /admin-login to access admin panel');
-                  }
-                });
-      }
-    });
+      console.log('Connected to PostgreSQL database');
   }
 });
 
+// Session configuration with PostgreSQL store
+app.use(session({
+  store: new pgSession({
+      pool: pool,
+      tableName: 'session'
+  }),
+  secret: process.env.SESSION_SECRET || 'your-secret-key-change-this-in-production',
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: isProduction ? 'none' : 'lax'
+  }
+}));
+
 // Middleware to check if user is authenticated
-function requireAuth(req, res, next) {
+async function requireAuth(req, res, next) {
   if (req.session.userId) {
-    // Check if member is still active
-    db.get('SELECT * FROM members WHERE id = ? AND status = "active"', 
-      [req.session.userId], 
-      (err, member) => {
-        if (err || !member) {
-          req.session.destroy();
-          return res.status(401).json({ error: 'Not authenticated or access revoked' });
-        }
-        req.user = member;
-        next();
-      });
+      try {
+          const result = await pool.query(
+              'SELECT * FROM members WHERE id = $1 AND status = $2',
+              [req.session.userId, 'active']
+          );
+          
+          if (result.rows.length === 0) {
+              req.session.destroy();
+              return res.status(401).json({ error: 'Not authenticated or access revoked' });
+          }
+          
+          req.user = result.rows[0];
+          next();
+      } catch (err) {
+          console.error('Auth check error:', err);
+          res.status(500).json({ error: 'Server error' });
+      }
   } else {
-    res.status(401).json({ error: 'Not authenticated' });
+      res.status(401).json({ error: 'Not authenticated' });
   }
 }
 
 // Middleware to check if user is admin
-function requireAdmin(req, res, next) {
+async function requireAdmin(req, res, next) {
   if (req.session.userId) {
-    db.get('SELECT * FROM members WHERE id = ? AND role = "admin" AND status = "active"', 
-      [req.session.userId], 
-      (err, admin) => {
-        if (err || !admin) {
-          return res.status(403).json({ error: 'Admin access required' });
-        }
-        req.user = admin;
-        next();
-      });
+      try {
+          const result = await pool.query(
+              'SELECT * FROM members WHERE id = $1 AND role = $2 AND status = $3',
+              [req.session.userId, 'admin', 'active']
+          );
+          
+          if (result.rows.length === 0) {
+              return res.status(403).json({ error: 'Admin access required' });
+          }
+          
+          req.user = result.rows[0];
+          next();
+      } catch (err) {
+          console.error('Admin check error:', err);
+          res.status(500).json({ error: 'Server error' });
+      }
   } else {
-    res.status(401).json({ error: 'Not authenticated' });
+      res.status(401).json({ error: 'Not authenticated' });
   }
 }
 
 // Public Routes
 
 // Request access to the club
-app.post('/api/request-access', (req, res) => {
+app.post('/api/request-access', async (req, res) => {
   const { email, name, message } = req.body;
-  
+
   if (!email || !name) {
-    return res.status(400).json({ error: 'Email and name are required' });
+      return res.status(400).json({ error: 'Email and name are required' });
   }
 
-  // Check if already a member
-  db.get('SELECT * FROM members WHERE email = ?', [email], (err, member) => {
-    if (member) {
-      return res.status(400).json({ error: 'This email is already registered' });
-    }
+  try {
+      // Check if already a member
+      const memberCheck = await pool.query(
+          'SELECT * FROM members WHERE email = $1',
+          [email]
+      );
+      
+      if (memberCheck.rows.length > 0) {
+          return res.status(400).json({ error: 'This email is already registered' });
+      }
 
-    // Check if request already exists
-    db.get('SELECT * FROM access_requests WHERE email = ? AND status = "pending"', 
-      [email], 
-      (err, request) => {
-        if (request) {
+      // Check if request already exists
+      const requestCheck = await pool.query(
+          'SELECT * FROM access_requests WHERE email = $1 AND status = $2',
+          [email, 'pending']
+      );
+      
+      if (requestCheck.rows.length > 0) {
           return res.status(400).json({ error: 'Access request already pending' });
-        }
+      }
 
-        db.run(`INSERT INTO access_requests (email, name, message) VALUES (?, ?, ?)`,
-          [email, name, message || ''],
-          function(err) {
-            if (err) {
-              return res.status(500).json({ error: err.message });
-            }
-            res.json({ 
-              message: 'Access request submitted! Leadership will review your request.',
-              requestId: this.lastID 
-            });
-          });
+      // Insert new request
+      const result = await pool.query(
+          'INSERT INTO access_requests (email, name, message) VALUES ($1, $2, $3) RETURNING id',
+          [email, name, message || '']
+      );
+
+      res.json({
+          message: 'Access request submitted! Leadership will review your request.',
+          requestId: result.rows[0].id
       });
-  });
+  } catch (err) {
+      console.error('Request access error:', err);
+      res.status(500).json({ error: err.message });
+  }
 });
 
-// Generate magic link for login (simulated - in production, send via email)
-app.post('/api/generate-login-link', (req, res) => {
+// Generate magic link for login
+app.post('/api/generate-login-link', async (req, res) => {
   const { email } = req.body;
-  
+
   if (!email) {
-    return res.status(400).json({ error: 'Email is required' });
+      return res.status(400).json({ error: 'Email is required' });
   }
 
-  // Check if member is active
-  db.get('SELECT * FROM members WHERE email = ? AND status = "active"', [email], (err, member) => {
-    if (err || !member) {
-      return res.status(404).json({ error: 'No active member found with this email' });
-    }
+  try {
+      // Check if member is active
+      const result = await pool.query(
+          'SELECT * FROM members WHERE email = $1 AND status = $2',
+          [email, 'active']
+      );
+      
+      if (result.rows.length === 0) {
+          return res.status(404).json({ error: 'No active member found with this email' });
+      }
 
-    // Generate magic link token
-    const token = crypto.randomBytes(32).toString('hex');
-    const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+      // Generate magic link token
+      const token = crypto.randomBytes(32).toString('hex');
+      const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
 
-    db.run(`INSERT INTO magic_links (email, token, expires_at) VALUES (?, ?, ?)`,
-      [email, token, expiresAt.toISOString()],
-      function(err) {
-        if (err) {
-          return res.status(500).json({ error: err.message });
-        }
+      await pool.query(
+          'INSERT INTO magic_links (email, token, expires_at) VALUES ($1, $2, $3)',
+          [email, token, expiresAt]
+      );
 
-        // In production, send this link via email
-        const loginLink = `https://localhost:${port}/login/${token}`;
-        res.json({ 
+      const loginLink = `${BASE_URL}/login/${token}`;
+      
+      res.json({
           message: 'Login link generated! (In production, this would be emailed)',
           loginLink: loginLink,
           expiresIn: '15 minutes'
-        });
       });
-  });
+  } catch (err) {
+      console.error('Generate login link error:', err);
+      res.status(500).json({ error: err.message });
+  }
 });
 
 // Verify magic link and log in
-app.get('/api/verify-token/:token', (req, res) => {
+app.get('/api/verify-token/:token', async (req, res) => {
   const { token } = req.params;
 
-  db.get(`SELECT * FROM magic_links WHERE token = ? AND used = 0 AND expires_at > datetime('now')`,
-    [token],
-    (err, link) => {
-      if (err || !link) {
-        return res.status(400).json({ error: 'Invalid or expired login link' });
+  try {
+      // Get valid magic link
+      const linkResult = await pool.query(
+          'SELECT * FROM magic_links WHERE token = $1 AND used = 0 AND expires_at > NOW()',
+          [token]
+      );
+      
+      if (linkResult.rows.length === 0) {
+          return res.status(400).json({ error: 'Invalid or expired login link' });
       }
 
+      const link = linkResult.rows[0];
+
       // Get member info
-      db.get('SELECT * FROM members WHERE email = ? AND status = "active"', 
-        [link.email], 
-        (err, member) => {
-          if (err || !member) {
-            return res.status(404).json({ error: 'Member not found or inactive' });
-          }
+      const memberResult = await pool.query(
+          'SELECT * FROM members WHERE email = $1 AND status = $2',
+          [link.email, 'active']
+      );
+      
+      if (memberResult.rows.length === 0) {
+          return res.status(404).json({ error: 'Member not found or inactive' });
+      }
 
-          // Mark link as used
-          db.run('UPDATE magic_links SET used = 1 WHERE id = ?', [link.id]);
+      const member = memberResult.rows[0];
 
-          // Update last login
-          db.run('UPDATE members SET last_login = ? WHERE id = ?', 
-            [new Date().toISOString(), member.id]);
+      // Mark link as used
+      await pool.query('UPDATE magic_links SET used = 1 WHERE id = $1', [link.id]);
 
-          // Create session
-          req.session.userId = member.id;
-          req.session.email = member.email;
-          req.session.role = member.role;
+      // Update last login
+      await pool.query(
+          'UPDATE members SET last_login = NOW() WHERE id = $1',
+          [member.id]
+      );
 
-          res.json({ 
-            success: true,
-            member: {
+      // Create session
+      req.session.userId = member.id;
+      req.session.email = member.email;
+      req.session.role = member.role;
+
+      res.json({
+          success: true,
+          member: {
               id: member.id,
               name: member.name,
               email: member.email,
               role: member.role
-            }
-          });
-        });
-    });
+          }
+      });
+  } catch (err) {
+      console.error('Verify token error:', err);
+      res.status(500).json({ error: err.message });
+  }
 });
 
 // Check authentication status
-app.get('/api/check-auth', (req, res) => {
+app.get('/api/check-auth', async (req, res) => {
   if (req.session.userId) {
-    db.get('SELECT id, name, email, role, member_since FROM members WHERE id = ? AND status = "active"',
-      [req.session.userId],
-      (err, member) => {
-        if (err || !member) {
-          req.session.destroy();
-          return res.json({ authenticated: false });
-        }
-        res.json({ 
-          authenticated: true, 
-          user: member 
-        });
-      });
+      try {
+          const result = await pool.query(
+              'SELECT id, name, email, role, member_since FROM members WHERE id = $1 AND status = $2',
+              [req.session.userId, 'active']
+          );
+          
+          if (result.rows.length === 0) {
+              req.session.destroy();
+              return res.json({ authenticated: false });
+          }
+          
+          res.json({
+              authenticated: true,
+              user: result.rows[0]
+          });
+      } catch (err) {
+          console.error('Check auth error:', err);
+          res.json({ authenticated: false });
+      }
   } else {
-    res.json({ authenticated: false });
+      res.json({ authenticated: false });
   }
 });
 
@@ -270,119 +280,146 @@ app.post('/api/logout', (req, res) => {
 // Get personalized data for logged-in member
 app.get('/api/member/dashboard', requireAuth, (req, res) => {
   res.json({
-    message: `Welcome back, ${req.user.name}!`,
-    memberData: {
-      name: req.user.name,
-      email: req.user.email,
-      role: req.user.role,
-      memberSince: req.user.member_since,
-      lastLogin: req.user.last_login
-    }
+      message: `Welcome back, ${req.user.name}!`,
+      memberData: {
+          name: req.user.name,
+          email: req.user.email,
+          role: req.user.role,
+          memberSince: req.user.member_since,
+          lastLogin: req.user.last_login
+      }
   });
 });
 
 // Admin Routes
 
 // Get all access requests
-app.get('/api/admin/access-requests', requireAdmin, (req, res) => {
-  db.all('SELECT * FROM access_requests WHERE status = "pending" ORDER BY created_at DESC', 
-    [], 
-    (err, requests) => {
-      if (err) {
-        return res.status(500).json({ error: err.message });
-      }
-      res.json({ requests });
-    });
+app.get('/api/admin/access-requests', requireAdmin, async (req, res) => {
+  try {
+      const result = await pool.query(
+          'SELECT * FROM access_requests WHERE status = $1 ORDER BY created_at DESC',
+          ['pending']
+      );
+      
+      res.json({ requests: result.rows });
+  } catch (err) {
+      console.error('Get access requests error:', err);
+      res.status(500).json({ error: err.message });
+  }
 });
 
 // Approve access request
-app.post('/api/admin/approve-request/:id', requireAdmin, (req, res) => {
+app.post('/api/admin/approve-request/:id', requireAdmin, async (req, res) => {
   const requestId = req.params.id;
 
-  db.get('SELECT * FROM access_requests WHERE id = ?', [requestId], (err, request) => {
-    if (err || !request) {
-      return res.status(404).json({ error: 'Request not found' });
-    }
+  try {
+      // Get request
+      const requestResult = await pool.query(
+          'SELECT * FROM access_requests WHERE id = $1',
+          [requestId]
+      );
+      
+      if (requestResult.rows.length === 0) {
+          return res.status(404).json({ error: 'Request not found' });
+      }
 
-    // Add as member
-    db.run(`INSERT INTO members (email, name, status, member_since) VALUES (?, ?, ?, ?)`,
-      [request.email, request.name, 'active', new Date().toISOString()],
-      function(err) {
-        if (err) {
-          return res.status(500).json({ error: err.message });
-        }
+      const request = requestResult.rows[0];
 
-        // Update request status
-        db.run('UPDATE access_requests SET status = "approved" WHERE id = ?', [requestId]);
+      // Add as member
+      const memberResult = await pool.query(
+          'INSERT INTO members (email, name, status, member_since) VALUES ($1, $2, $3, NOW()) RETURNING id',
+          [request.email, request.name, 'active']
+      );
 
-        res.json({ 
+      // Update request status
+      await pool.query(
+          'UPDATE access_requests SET status = $1 WHERE id = $2',
+          ['approved', requestId]
+      );
+
+      res.json({
           message: 'Member approved successfully',
-          memberId: this.lastID 
-        });
+          memberId: memberResult.rows[0].id
       });
-  });
+  } catch (err) {
+      console.error('Approve request error:', err);
+      res.status(500).json({ error: err.message });
+  }
 });
 
 // Reject access request
-app.post('/api/admin/reject-request/:id', requireAdmin, (req, res) => {
+app.post('/api/admin/reject-request/:id', requireAdmin, async (req, res) => {
   const requestId = req.params.id;
 
-  db.run('UPDATE access_requests SET status = "rejected" WHERE id = ?', 
-    [requestId], 
-    function(err) {
-      if (err) {
-        return res.status(500).json({ error: err.message });
-      }
+  try {
+      const result = await pool.query(
+          'UPDATE access_requests SET status = $1 WHERE id = $2',
+          ['rejected', requestId]
+      );
+      
       res.json({ message: 'Request rejected' });
-    });
+  } catch (err) {
+      console.error('Reject request error:', err);
+      res.status(500).json({ error: err.message });
+  }
 });
 
 // Get all members
-app.get('/api/admin/members', requireAdmin, (req, res) => {
-  db.all('SELECT id, name, email, role, status, member_since, last_login, created_at FROM members ORDER BY created_at DESC',
-    [],
-    (err, members) => {
-      if (err) {
-        return res.status(500).json({ error: err.message });
-      }
-      res.json({ members });
-    });
+app.get('/api/admin/members', requireAdmin, async (req, res) => {
+  try {
+      const result = await pool.query(
+          'SELECT id, name, email, role, status, member_since, last_login, created_at FROM members ORDER BY created_at DESC'
+      );
+      
+      res.json({ members: result.rows });
+  } catch (err) {
+      console.error('Get members error:', err);
+      res.status(500).json({ error: err.message });
+  }
 });
 
 // Update member status
-app.post('/api/admin/members/:id/status', requireAdmin, (req, res) => {
+app.post('/api/admin/members/:id/status', requireAdmin, async (req, res) => {
   const { id } = req.params;
   const { status } = req.body;
 
   if (!['active', 'inactive'].includes(status)) {
-    return res.status(400).json({ error: 'Invalid status' });
+      return res.status(400).json({ error: 'Invalid status' });
   }
 
-  db.run('UPDATE members SET status = ? WHERE id = ?',
-    [status, id],
-    function(err) {
-      if (err) {
-        return res.status(500).json({ error: err.message });
-      }
-      res.json({ message: 'Member status updated', changes: this.changes });
-    });
+  try {
+      const result = await pool.query(
+          'UPDATE members SET status = $1 WHERE id = $2',
+          [status, id]
+      );
+      
+      res.json({ message: 'Member status updated', changes: result.rowCount });
+  } catch (err) {
+      console.error('Update member status error:', err);
+      res.status(500).json({ error: err.message });
+  }
 });
 
 // Delete member
-app.delete('/api/admin/members/:id', requireAdmin, (req, res) => {
+app.delete('/api/admin/members/:id', requireAdmin, async (req, res) => {
   const { id } = req.params;
 
   // Prevent deleting yourself
   if (parseInt(id) === req.user.id) {
-    return res.status(400).json({ error: 'Cannot delete your own account' });
+      return res.status(400).json({ error: 'Cannot delete your own account' });
   }
 
-  db.run('DELETE FROM members WHERE id = ?', [id], function(err) {
-    if (err) {
-      return res.status(500).json({ error: err.message });
-    }
-    res.json({ message: 'Member deleted', changes: this.changes });
-  });
+  try {
+      const result = await pool.query(
+          'DELETE FROM members WHERE id = $1',
+          [id]
+      );
+      
+      res.json({ message: 'Member deleted', changes: result.rowCount });
+  } catch (err) {
+      console.error('Delete member error:', err);
+      res.status(500).json({ error: err.message });
+  }
 });
 
 // Serve HTML pages
@@ -403,27 +440,23 @@ app.get('/admin-login', (req, res) => {
 });
 
 app.get('/manifest.json', (req, res) => {
-    res.sendFile(path.join(__dirname, 'manifest.json'));
+  res.sendFile(path.join(__dirname, 'manifest.json'));
 });
 
 app.get('/sw.js', (req, res) => {
-    res.set('Content-Type', 'application/javascript');
-    res.sendFile(path.join(__dirname, 'sw.js'));
+  res.set('Content-Type', 'application/javascript');
+  res.sendFile(path.join(__dirname, 'sw.js'));
 });
 
 // Start server
-app.listen(port, () => {
-  console.log(`Server running at https://localhost:${port}`);
-  console.log(`Admin login at https://localhost:${port}/admin-login`);
+app.listen(port, '0.0.0.0', () => {
+  console.log(`Server running at ${BASE_URL}`);
+  console.log(`Admin login at ${BASE_URL}/admin-login`);
 });
 
-// Close database on exit
-process.on('SIGINT', () => {
-  db.close((err) => {
-    if (err) {
-      console.error(err.message);
-    }
-    console.log('Database connection closed');
-    process.exit(0);
-  });
+// Close database pool on exit
+process.on('SIGINT', async () => {
+  await pool.end();
+  console.log('Database pool closed');
+  process.exit(0);
 });

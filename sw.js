@@ -1,4 +1,4 @@
-const VERSION = "v1"
+const VERSION = "v1.1"
 const CACHE_NAME = `dates-${VERSION}`;
 const APP_STATIC_RESOURCES = [
     "/",
@@ -6,8 +6,9 @@ const APP_STATIC_RESOURCES = [
     "/style.css",
     "/app.js",
     "/manifest.json",
-    "/icons/large.png"
-    // include the svg file of the images if you are using it for splash screens or anything
+    "/icons/large.png",
+    "/icons/small.png",
+    "/icons/tiny.png"
 ];
 
 // instll cache files
@@ -20,8 +21,7 @@ self.addEventListener("install", (event) => {
     );
 });
 
-
-//activate - clean up old caches
+//clean up caches
 self.addEventListener("activate", (event) => {
     event.waitUntil(
         (async () => {
@@ -39,7 +39,8 @@ self.addEventListener("activate", (event) => {
     );
 });
 
-// Fetch event - serve from cache, fallback to network
+// return cache or use network
+// todo do I want to flip this?
 self.addEventListener('fetch', (event) => {
     // Skip cross-origin requests
     if (!event.request.url.startsWith(self.location.origin)) {
@@ -63,12 +64,6 @@ self.addEventListener('fetch', (event) => {
                         return fetchResponse;
                     });
                 });
-            });
-    );
+            }));
+
 });
-
-
-
-
-
-
