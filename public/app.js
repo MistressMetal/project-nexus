@@ -2,15 +2,13 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebas
 import { getFirestore, collection, addDoc, getDocs, query, orderBy, where } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging.js";
 
-FIREBASE_API = process.env.FIREBASE_API
-
 if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('/firebase-messaging-sw.js')
         .then(reg => console.log('SW registered:', reg))
         .catch(err => console.error('SW registration failed:', err));
 }
 const firebaseConfig = {
-    apiKey: FIREBASE_API,
+    apiKey: "AIzaSyCLQ9bn3zp65FRhxat-QHcVnQfeiehjf3k",
     authDomain: "hcpa-project-nexus.firebaseapp.com",
     projectId: "hcpa-project-nexus",
     storageBucket: "hcpa-project-nexus.firebasestorage.app",
@@ -189,5 +187,6 @@ window.getAnnouncements = getAnnouncements;
 window.messaging = getMessaging(app);
 
 //window.requestPermission = requestPermission;
+
 
 
