@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Login</title>
+    <link rel="stylesheet" href="style.css" />
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#FFED00" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Project Nexus" />
+    <link rel="apple-touch-icon" href="/icons/small.png" />
+    <link rel="icon" type="image/x-icon" href="/icons/favicon.png">
+
+</head>
+<style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .login-container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 40px;
+            max-width: 400px;
+            width: 100%;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        p {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #555;
+            font-weight: 500;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+            input:focus {
+                outline: none;
+                border-color: #f5576c;
+            }
+
+        button {
+            width: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 14px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            transition: transform 0.2s;
+        }
+
+            button:hover {
+                transform: translateY(-2px);
+            }
+
+        .message {
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+            .message.success {
+                background: #d4edda;
+                color: #155724;
+                border: 1px solid #c3e6cb;
+                display: block;
+            }
+
+            .message.error {
+                background: #f8d7da;
+                color: #721c24;
+                border: 1px solid #f5c6cb;
+                display: block;
+            }
+
+        .magic-link {
+            background: #fff3cd;
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 20px;
+            border: 1px solid #ffc107;
+            display: none;
+        }
+
+            .magic-link.show {
+                display: block;
+            }
+
+            .magic-link a {
+                color: #856404;
+                word-break: break-all;
+                text-decoration: none;
+                font-weight: 500;
+            }
+
+                .magic-link a:hover {
+                    text-decoration: underline;
+                }
+
+        .back-link {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+            .back-link a {
+                color: #f5576c;
+                text-decoration: none;
+            }
+
+                .back-link a:hover {
+                    text-decoration: underline;
+                }
+
+        .info-box {
+            background: #e3f2fd;
+            border: 1px solid #90caf9;
+            border-radius: 6px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+            .info-box strong {
+                color: #1976d2;
+            }
+
+            .info-box p {
+                text-align: left;
+                margin: 5px 0;
+                font-size: 14px;
+            }
+    </style>
+<body>
+    <div class="login-container">
+        <h1>🔐 Admin Login</h1>
+        <p>Enter your admin email to receive a login link</p>
+
+        <div class="info-box">
+            <strong>🎯 Demo Credentials:</strong>
+            <p>Email: <code>admin@club.com</code></p>
+            <p style="margin-bottom: 0;">This is the default admin account for testing.</p>
+        </div>
+
+        <div id="message" class="message"></div>
+
+        <form id="adminLoginForm">
+            <div class="form-group">
+                <label for="adminEmail">Admin Email:</label>
+                <input type="email" id="adminEmail" value="admin@club.com" required>
+            </div>
+            <button type="submit">Send Admin Login Link</button>
+        </form>
+
+        <div id="magicLinkDisplay" class="magic-link"></div>
+
+        <div class="back-link">
+            <a href="/">← Back to Member Portal</a>
+        </div>
+    </div>
+
+    <script>
+        function showMessage(text, type) {
+            const message = document.getElementById('message');
+            message.textContent = text;
+            message.className = `message ${type}`;
+            setTimeout(() => {
+                message.className = 'message';
+            }, 5000);
+        }
+
+        document.getElementById('adminLoginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('adminEmail').value;
+
+            try {
+                const response = await fetch('/api/generate-login-link', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showMessage('Login link generated!', 'success');
+                    const linkDisplay = document.getElementById('magicLinkDisplay');
+                    linkDisplay.innerHTML = `
+                <strong>🔗 Your Admin Login Link:</strong><br><br>
+                <a href="${data.loginLink}" onclick="handleLoginClick(event, this.href)">${data.loginLink}</a>
+                <p style="margin-top: 10px; font-size: 12px; color: #856404;">
+                  In production, this would be sent to your email. Click the link to log in to the admin panel.
+                </p>
+              `;
+                    linkDisplay.classList.add('show');
+                } else {
+                    showMessage(data.error, 'error');
+                }
+            } catch (error) {
+                showMessage('Error generating login link', 'error');
+            }
+        });
+
+        function handleLoginClick(event, url) {
+            event.preventDefault();
+            window.location.href = url;
+        }
+
+        // Check if already logged in as admin
+        async function checkAuth() {
+            try {
+                const response = await fetch('/api/check-auth');
+                const data = await response.json();
+
+                if (data.authenticated && data.user.role === 'admin') {
+                    window.location.href = '/admin';
+                }
+            } catch (error) {
+                // Not logged in, stay on this page
+            }
+        }
+
+        checkAuth();
+    </script>
+    <script>
+
+
+        // Detect if app is installed
+        window.addEventListener('beforeinstallprompt', (e) => {
+            console.log('PWA install prompt available');
+            // You can save this event and trigger it later with a custom button
+        });
+
+        // Detect if running as installed PWA
+        if (window.matchMedia('(display-mode: standalone)').matches) {
+            console.log('Running as installed PWA');
+        }
+    </script>
+</body>
+</html>
