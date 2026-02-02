@@ -1,0 +1,60 @@
+<!--Header-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SEIU HCPA Member Portal</title>
+    <link rel="stylesheet" href="style.css" />
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#FFED00" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="Project Nexus" />
+<link rel="apple-touch-icon" href="/icons/small.png" />
+    <link rel="icon" type="image/x-icon" href="/icons/tiny.png"/>
+</head>
+<body>
+    <h1>Manage Users</h1>
+    <table id="userTable">
+        <thead>
+            <tr>
+                <th>First Name</th>
+                <th>Last Name</th>
+                <th>Email</th>
+                <th>Chapter</th>
+                <th>Role</th>
+                <th>Active</th>
+                <th>Approve</th>
+                <th>Toggle Active Status</th>
+            </tr>
+        </thead>
+        <tbody id="userTableBody">
+            <tr><td colspan="5">Loading...</td></tr>
+        </tbody>
+    </table>
+</body>
+
+<script src="/app.js" type="module">   </script>
+<script type="module">
+document.getElementById('userTableBody').addEventListener('click', async (e) => {
+    if (e.target.classList.contains('btn-approve')) {
+        const id = e.target.dataset.id;
+        const row_id = e.target.dataset.rowId;
+        await approveUser(id, row_id, e.target);
+    }
+
+    if (e.target.classList.contains('btn-active')) {
+        const id = e.target.dataset.id;
+        console.log(id)
+        const active = e.target.dataset.active;
+        console.log(active)
+        const row_id = e.target.dataset.row_id;
+        await changeActive(id, active, row_id, e.target);
+    }
+
+})
+
+    editUsers();
+//    editAnnouncements();
+</script>

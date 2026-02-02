@@ -1,0 +1,69 @@
+<!--Header-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="style.css" />
+    <title>SEIU HCPA Member Portal</title>
+    <link rel="stylesheet" href="style.css" />
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#FFED00" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Project Nexus" />
+    <link rel="apple-touch-icon" href="/icons/small.png" />
+    <link rel="icon" type="image/x-icon" href="/icons/tiny.png">
+</head>
+<body>
+    <div class="container">
+        <div class="content">
+            <p> This page will eventually let you reset your password. Until then, complain to Lindsay.</p>
+            <p>Enter your email to recieve an email with instructions to reset your password.</p>
+            <form id="resetPasswordForm">
+                <div class="form-group">
+                    <label for="forgotPasswordEmail">Email:</label>
+                    <input class="text-input" type="text" id="forgotPasswordEmail" required>
+                </div>
+                <button class="forgot-password-button" type="submit">Send Email</button>
+            </form>
+        </div> <!--Content-->
+    </div><!--container-->
+
+<!--request access link-->
+<!--once logged in-->
+<!--tabs members/admin-->
+<!--member information-->
+<!--annnoucnements-->
+<!--manage members-->
+<!--Header-->
+<!--Header-->
+<!--Header-->
+<!--Header-->
+<!--Header-->
+</body>
+<script src="/app.js" type="module">   </script>
+<script type="module">
+        // When reset button is pressed
+        document.getElementById('resetPasswordForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('forgotPasswordEmail').value;
+            try {
+                const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
+                    redirectTo: 'update-password.html',
+                })
+             
+            
+            if (error) {
+                console.error('Supabase password reset error:', error);
+                alert('Send Email failed: ' + error.message);
+                return;
+            }
+
+            } catch (error) {
+                console.error('Error:', error);
+                alert('An error occurred: ' + error.message);
+            }
+        });
+
+</script>

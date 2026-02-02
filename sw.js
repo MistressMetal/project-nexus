@@ -41,29 +41,30 @@ self.addEventListener("activate", (event) => {
 
 // return cache or use network
 // todo do I want to flip this?
-self.addEventListener('fetch', (event) => {
+
+//self.addEventListener('fetch', (event) => {
     // Skip cross-origin requests
-    if (!event.request.url.startsWith(self.location.origin)) {
-        return;
-    }
+//    if (!event.request.url.startsWith(self.location.origin)) {
+//        return;
+//    }
 
     // Don't cache API calls
-    if (event.request.url.includes('/api/')) {
-        event.respondWith(fetch(event.request));
-        return;
-    }
+//    if (event.request.url.includes('/api/')) {
+//        event.respondWith(fetch(event.request));
+//        return;
+//    }
 
-    event.respondWith(
-        caches.match(event.request)
-            .then((response) => {
-                // Return cached version or fetch from network
-                return response || fetch(event.request).then((fetchResponse) => {
-                    // Cache new requests
-                    return caches.open(CACHE_NAME).then((cache) => {
-                        cache.put(event.request, fetchResponse.clone());
-                        return fetchResponse;
-                    });
-                });
-            }));
+//    event.respondWith(
+//        caches.match(event.request)
+//            .then((response) => {
+//                // Return cached version or fetch from network
+//                return response || fetch(event.request).then((fetchResponse) => {
+//                    // Cache new requests
+//                    return caches.open(CACHE_NAME).then((cache) => {
+//                        cache.put(event.request, fetchResponse.clone());
+//                        return fetchResponse;
+//                    });
+//                });
+//            }));
 
-});
+//});

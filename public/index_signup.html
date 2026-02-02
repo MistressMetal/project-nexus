@@ -1,0 +1,119 @@
+<!--Header-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SEIU HCPA Member Portal</title>
+    <link rel="stylesheet" href="style.css" />
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#FFED00" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Project Nexus" />
+    <link rel="apple-touch-icon" href="/icons/small.png" />
+    <link rel="icon" type="image/x-icon" href="/icons/tiny.png">
+</head>
+<body>
+    <div class="container">
+        <div class="content">
+                <div class="form-section">
+                    <h2>Request Hub Access</h2>
+                    <p style="margin-bottom: 20px;">Submit a request to join the Chapter Hub. Leadership will review your application.</p>
+                    <form id="requestForm">
+                        <div class="form-group">
+                            <label for="requestEmail">Email:</label>
+                            <input type="text" id="requestEmail" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="requestFirst">First Name:</label>
+                            <input type="text" id="requestFirst" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="requestLast">Last Name:</label>
+                            <input type="text" id="requestLast" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="selectChapter">Select Chapter</label>
+                            <select name="selectChapter" id="selectChapter">
+                                <option>loading...</option>
+                            </select>
+                        <div class="form-group">
+                            <label for="requestPassword">Password:</label>
+                            <input type="password" id="requestPassword" required>
+                        </div>
+                        </div>
+                        <button type="submit">Submit Request</button>
+
+                    </form>
+                </div> <!--Form-->
+                <p>Already registered? <a href="index_signin.html">Log in</a> or <a href="reset.html">reset your password</a>.</p>
+        </div> <!--Content-->
+    </div><!--container-->
+
+<!--request access link-->
+<!--once logged in-->
+<!--tabs members/admin-->
+<!--member information-->
+<!--annnoucnements-->
+<!--manage members-->
+<!--Header-->
+<!--Header-->
+<!--Header-->
+<!--Header-->
+<!--Header-->
+</body>
+<script src="/app.js" type="module"></script>
+<script type="module">
+
+
+        // When request access button is pressed
+    document.getElementById('requestForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const firstName = document.getElementById('requestFirst').value;
+        const lastName = document.getElementById('requestLast').value;
+        const email = document.getElementById('requestEmail').value;
+        const chapter = document.getElementById('selectChapter').value;
+        const password = document.getElementById('requestPassword').value;
+
+         
+        const {data: check_data, error: check_error } = await supabase
+            .from('profiles')
+            .select('id')
+            .eq('email', requestEmail)
+        console.log(check_data);
+        if (check_data) {
+            alert("This email is already registered. Please log in or reset your password.")
+        }
+
+        
+        try {
+            const { data:authData, error } = await supabase.auth.signUp({
+            email: email,
+            password: password,
+            options: {
+                data: {
+                    first_name: firstName,
+                    last_name: lastName,
+                    chapter: chapter
+                }
+            }
+
+            });
+
+        if (error) {
+            console.error('Supabase signup error:', error);
+            alert('Signup failed: ' + error.message);
+            return;
+        }
+
+        } catch (error) {
+            console.error('Error:', error);
+            alert('An error occurred: ' + error.message);
+        }
+            });
+    
+
+document.addEventListener("DOMContentLoaded", loadChapters);
+
+</script>

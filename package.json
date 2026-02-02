@@ -16,7 +16,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@supabase/supabase-js": "^2.89.0",
+    "@supabase/supabase-js": "^2.90.1",
     "connect-sqlite3": "^0.9.13",
     "dotenv": "^17.2.3",
     "express": "^4.18.2",
