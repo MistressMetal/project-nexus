@@ -1,192 +1,162 @@
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
+h2 {
+color: var(Font-Black, #0F0F0F);
+font-feature-settings: 'liga' off, 'clig' off;
+
+/* Header 1 */
+font-family: "Gothic A1";
+font-size: 26px;
+font-style: normal;
+font-weight: 600;
+line-height: 32px; /* 123.077% */
 }
 
-body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  min-height: 100vh;
-  padding: 20px;
-}
 
-.container {
-  max-width: 900px;
-  margin: 0 auto;
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-  overflow: hidden;
-}
 
-.header {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  padding: 30px;
-  text-align: center;
-}
+/* Add a black background color to the top navigation */
+.topnav {
+    background-color: #794C99;
+    overflow: hidden;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+  }
+  
+  /* Style the links inside the navigation bar */
+  .topnav a {
+    float: left;
+    display: block;
+    color: #ffffff;
+    text-align: center;
+    padding: 14px 16px;
+    text-decoration: none;
+    font-size: 17px;
 
-.content {
-  padding: 30px;
-}
+  }
+  
+  /* Change the color of links on hover */
+  .topnav a:hover {
+    background-color: #ddd;
+    color: black;
+  }
+  
+  /* Add an active class to highlight the current page */
+  .topnav a.active {
+    background-color: #AD62CE;
+    color: white;
+  }
+  
+  /* Hide the link that should open and close the topnav on small screens */
+  .topnav .icon {
+    display: none;
+  }
 
-.auth-section, .member-section {
-  display: none;
-}
+  /* When the screen is less than 600 pixels wide, hide all links, except for the first one ("Home"). Show the link that contains should open and close the topnav (.icon) */
+@media screen and (max-width: 600px) {
+    .topnav a:not(:first-child) {display: none;}
+    .topnav a.icon {
+      float: right;
+      display: block;
+    }
+  }
+  
+  /* The "responsive" class is added to the topnav with JavaScript when the user clicks on the icon. This class makes the topnav look good on small screens (display the links vertically instead of horizontally) */
+  @media screen and (max-width: 600px) {
+    .topnav.responsive {position: relative;}
+    .topnav.responsive a.icon {
+      position: absolute;
+      right: 0;
+      top: 0;
+    }
+    .topnav.responsive a {
+      float: none;
+      display: block;
+      text-align: left;
+    }
+  }
 
-.auth-section.show, .member-section.show {
-  display: block;
-}
-
-.form-section {
-  background: #f8f9fa;
-  padding: 25px;
-  border-radius: 8px;
-  margin-bottom: 20px;
+button {
+    display: flex;
+height: 48px;
+margin-top: 20px;
+padding: 12px 16px;
+align-items: center;
+gap: 8px;
+align-self: stretch;
+border-radius: 100px;
+color: var(--Monochromatic-09, #F2F2F2);
+background: linear-gradient(44deg, #572A77 10%, #AC62CF 86.44%);
 }
 
 .form-group {
-  margin-bottom: 15px;
+    display: flex;
+flex-direction: column;
+align-items: flex-start;
+gap: 4px;
+align-self: stretch;
 }
 
 label {
-  display: block;
-  margin-bottom: 5px;
-  color: #555;
-  font-weight: 500;
+    display: flex;
+width: 343px;
+height: 24px;
+padding-right: 302px;
+align-items: center;
+font-size: 16px
 }
 
-input, textarea {
-  width: 100%;
-  padding: 12px;
-  border: 2px solid #ddd;
-  border-radius: 6px;
-  font-size: 14px;
-  font-family: inherit;
+body {
+    background-image: linear-gradient(180deg, rgba(51, 51, 51, 0.70) 0%, rgba(51, 51, 51, 0.00) 45.3%, #333 100%);
+    width: 100vh;
+    background-attachment: fixed;
+
 }
 
-textarea {
-  min-height: 100px;
-  resize: vertical;
+select {
+    display: flex;
+height: 40px;
+padding: 6px 10px;
+align-items: center;
+gap: 8px;
+border-radius: 100px;
+font-size: 16px;
+font-weight: 500;
+background-color: var(--Monochromatic-09, #F2F2F2);
+color:#0F0F0F
+}
+input {
+    display: flex;
+height: 10px;
+padding: 12px 24px;
+align-items: center;
+gap: 8px;
+border-radius: 100px;
+font-size: 16px;
+font-weight: 500;
+background: var(--Monochromatic-09, #F2F2F2);
+color:#0F0F0F
+}
+ option {
+    display: flex;
+height: 20px;
+padding: 24px 24px;
+align-items: center;
+gap: 8px;
+border-radius: 100px;
+font-size: 16px;
+font-weight: 500;
+background: var(--Monochromatic-09, green);
+color:purple
 }
 
-button {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  border: none;
-  padding: 12px 24px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 16px;
-  font-weight: 500;
-  transition: transform 0.2s;
-}
 
-button:hover {
-  transform: translateY(-2px);
-}
-
-.message {
-  padding: 12px;
-  border-radius: 6px;
-  margin-bottom: 15px;
-  display: none;
-}
-
-.message.success {
-  background: #d4edda;
-  color: #155724;
-  border: 1px solid #c3e6cb;
-  display: block;
-}
-
-.message.error {
-  background: #f8d7da;
-  color: #721c24;
-  border: 1px solid #f5c6cb;
-  display: block;
-}
-
-.dashboard-card {
-  background: #f8f9fa;
-  padding: 20px;
-  border-radius: 8px;
-  margin-bottom: 20px;
-}
-
-.user-info {
-  display: grid;
-  gap: 10px;
-}
-
-.info-row {
-  display: flex;
-  justify-content: space-between;
-  padding: 10px;
-  background: white;
-  border-radius: 6px;
-}
-
-.info-label {
-  font-weight: 600;
-  color: #555;
-}
-
-.info-value {
-  color: #333;
-}
-
-.logout-btn {
-  background: #dc3545;
-  margin-top: 20px;
-}
-
-.tabs {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 20px;
-}
-
-.tab {
-  padding: 10px 20px;
-  background: #889EEA;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 14px;
-}
-
-.tab.active {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-}
-
-.tab-content {
-  display: none;
-}
-
-.tab-content.active {
-  display: block;
-}
-
-.magic-link {
-  background: #fff3cd;
-  padding: 15px;
-  border-radius: 6px;
-  margin-top: 15px;
-  border: 1px solid #ffc107;
-}
-
-.magic-link a {
-  color: #856404;
-  word-break: break-all;
+th {
+  border-bottom: #0F0F0F;
 }
 
 tr {
-  border-bottom: 1px solid #ddd
+  border-bottom: 1px solid darkslategrey
 }
 
 tr:nth-child(even) {
-  background-color: #ddd;
+  background-color: gray;
 }

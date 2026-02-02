@@ -446,6 +446,11 @@ app.get('/admin-login', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'admin-login.html'));
 });
 
+app.get('/index_signup', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index_signup.html'));
+  });
+  
+
 app.get('/manifest.json', (req, res) => {
   res.sendFile(path.join(__dirname, 'manifest.json'));
 });

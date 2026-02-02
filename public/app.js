@@ -1,231 +1,327 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, collection, addDoc, getDocs, query, orderBy, where } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging.js";
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
+const supabaseUrl = 'https://ijyzgiocbhgqpfsauapm.supabase.co/';
+const supabaseKey = 'sb_publishable_rzM3V_W7Y2kP9juN_vpUIA_2nYrAVOb';
+const supabase = createClient(supabaseUrl, supabaseKey);
 
-if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/firebase-messaging-sw.js')
-        .then(reg => console.log('SW registered:', reg))
-        .catch(err => console.error('SW registration failed:', err));
-}
-const firebaseConfig = {
-    apiKey: "AIzaSyCLQ9bn3zp65FRhxat-QHcVnQfeiehjf3k",
-    authDomain: "hcpa-project-nexus.firebaseapp.com",
-    projectId: "hcpa-project-nexus",
-    storageBucket: "hcpa-project-nexus.firebasestorage.app",
-    messagingSenderId: "276730700584",
-    appId: "1:276730700584:web:9b1047461ce72f3371e61d",
-    measurementId: "G-V2VKZ8FHFV"
-}
 
-const app=initializeApp(firebaseConfig);
-const db = getFirestore(app);
-const messaging = getMessaging(app);
+async function changeVisible(id, visible) {
+    const { error } = await supabase
+    .from('announcements')
+    .update({ 'visible': !visible })
+    .eq('id', id)
+    editAnnouncements()
+    }
 
-        // Register service worker
-       if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('/sw.js')
-                    .then((registration) => {
-                        console.log('Service Worker registered successfully:', registration.scope);
-                    })
-                    .catch((error) => {
-                        console.log('Service Worker registration failed:', error);
-                    });
-            });
-       }
-
-  document.getElementById('getAnnouncementsButton').addEventListener('click', async () => {
-    try {
-        const announcementTypeFilterElement = document.getElementById('announcementTypeFilter');
-        const announcementTypeFilterIndex = announcementTypeFilterElement.selectedIndex;
-        const announcementTypeFilterOption = announcementTypeFilterElement.options[announcementTypeFilterIndex];
-        const announcementTypeFilterText = announcementTypeFilterOption.text;
-        const announcementList = document.getElementById('announcement-list');
-        announcementList.innerHTML = '';
-
-        if (announcementTypeFilterElement.value === 'all') {
-            var querySnapshot = await getDocs(query(
-                collection(db, 'announcements'), 
-                orderBy('timestamp', 'desc')));
-            
-
-        }
-        else {
-        var querySnapshot = await getDocs(query(
-            collection(db, 'announcements'), 
-            orderBy('timestamp', 'desc'),
-            where('announcementType', '==', announcementTypeFilterText)));
-        }
-
-        if (querySnapshot.empty) {
-            announcementList.innerHTML = '<p>There are no announcements at this time.</p>';
-            return;
-        }
-        const table = document.createElement('table');
-        table.innerHTML = `
-        <thead>
-        <tr>
-        <th>Type</th>
-        <th>Announcement</th>
-        <th>Posted By</th>
-        <th>Date</th>
-        </tr>
-        </thead>
-        <tbody></tbody>
+async function editAnnouncements() {
+    const { data, error } = await supabase
+        .from('announcements')
+        .select('*');
+        if (error) {
+        console.error('Error:', error);
+        document.getElementById('tableBody').innerHTML = 
+            '<tr><td colspan="5">Error loading data</td></tr>';
+        return;
+    }
+        // Display the data in the table
+    const tableBody = document.getElementById('tableBody');
+    tableBody.innerHTML = '';
+        data.forEach(row => {
+            const date = new Date(row.created_at);
+            const year = date.getFullYear();
+            const month = date.getMonth() + 1;
+            const day = date.getDate();
+            const date_to_use = `${month}/${day}/${year}`;
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td>${date_to_use}</td>
+            <td>${row.type}</td>
+            <td>${row.posted_by}</td>
+            <td>${row.announcement_text}</td>
+            <td>${row.visible}</td>
+            <td>
+                <button class="btn-edit"> 
+                    Edit
+                  </button>
+                  </td>
+            <td>
+                <button class="btn-visible" onclick="changeVisible(${row.id}, ${row.visible})"> 
+                    Toggle Visibility
+                  </button>
+                  </td>
+            <td>
+                <button class="btn-delete" onclick="deleteAnnouncement(${row.id})">
+                    Delete
+                  </button>
+                  </td>
         `;
         
-        const tbody = table.querySelector('tbody');
+        tableBody.appendChild(tr);
+    });
+    tableBody.innerHTML
+
+}
 
 
-        querySnapshot.forEach((doc) => {
-            const data = doc.data();
-            const row=document.createElement('tr');
-            const listItem = document.createElement('tr');
-            row.innerHTML =`
-            <td>${data.announcementType}</td>
-            <td>${data.message}</td>
-            <td>${data.postedBy}</td>
-            <td>${data.timestamp ? new Date(data.timestamp.toDate()).toLocaleString() : 'Unknown'}</td>
-            `;
-            tbody.appendChild(row);
-        });
-            announcementList.appendChild(table);
-       
-    } catch (error) {
-        console.error('Error getting announcements:', error);
-        document.getElementById('announcement-list').innerHTML = `<p style="color: red;">Error loading announcements: ${error.message}</p>`;
+async function deleteAnnouncement(id) {
+    const { error } = await supabase
+    .from('announcements')
+    .update({ 'deleted': true, 'visible': false})
+    .eq('id', id)
+    editAnnouncements()
     }
-});
 
-  
-    async function getAnnouncements() {
-        try {
-            const querySnapshot = await getDocs(collection(db, 'announcements'));
-            const announcementList = document.getElementById('announcement-list');
-            announcementList.innerHTML = '';
+async function loadAnnouncements() {
+    const { data, error } = await supabase
+        .from('announcements')
+        .select(`* ORDER by type, created_at 
+            where visible is TRUE and deleted is FALSE`);
     
-            querySnapshot.forEach((doc) => {
-                const data = doc.data();
-                const listItem = document.createElement('li');
-                listItem.textContent = data.message;
-                announcementList.appendChild(listItem);
-            });
-        } catch (error) {
-            console.error('Error getting announcements:', error);
-        }
+    if (error) {
+        console.error('Error:', error);
+        document.getElementById('tableBody').innerHTML = 
+            '<tr><td colspan="5">Error loading data</td></tr>';
+        return;
     }
     
-    // Handle foreground messages
-    onMessage(messaging, (payload) => {
-        console.log('🔔 Message received:', payload);
-        alert(`${payload.notification.title}: ${payload.notification.body}`);
+    // Display the data in the table
+    const tableBody = document.getElementById('tableBody');
+    tableBody.innerHTML = '';
+    const filterTrue = true
+
+    
+    data.forEach(row => {
+        if (row.visible === filterTrue) {
+            const date = new Date(row.created_at);
+            const year = date.getFullYear();
+            const month = date.getMonth() + 1;
+            const day = date.getDate();
+            const date_to_use = `${month}/${day}/${year}`;
+            const tr = document.createElement('tr');
+        tr.innerHTML = 
+            `<td>${date_to_use}</td>
+            <td>${row.type}</td>
+            <td>${row.posted_by}</td>
+            <td>${row.announcement_text}</td>
+        `;
+        tableBody.appendChild(tr);}
+
+    });
+
+}
+
+async function loadChapters() {
+    const { data, error } = await supabase
+        .from('chapters')
+        .select(`id, long_name`)
+        .eq('active', true)
+        .order('long_name') 
+    
+    if (error) {
+        console.error('Error:', error);
+        document.getElementById('selectChapter').innerHTML = 
+            `<tr><td colspan="5">Error loading data</td></tr>`;
+        return;
+    }
+    
+    // Display the data in the table
+    const selectChapterElement = document.getElementById('selectChapter');
+    
+    selectChapterElement.innerHTML = '<option value:"">--Select a chapter ---</option>'
+    
+    data.forEach(row => {
+        const option = document.createElement('option');
+        option.value = row.id;
+        option.textContent = row.long_name;
+        selectChapterElement.appendChild(option)
+    });
+    }
+
+async function getLogin() {
+    const { data, error } = await supabase.auth.getSession()
+    console.log(data.session.user.id)
+    const id= data.session.user.id;
+
+    const { data: data_profiles, error: error_profiles } = await supabase
+        .from('profiles')
+        .select(`*`)
+        .eq('id', id);
+    console.log(data_profiles);
+//    console.log(data_profiles[0].first_name);
+    const first_name = data_profiles[0].first_name;
+    const chapter = data_profiles[0].chapter_key;
+    const role = data_profiles[0].role;
+
+    const {data: chapter_data, error: chapter_error} = await supabase
+    .from('chapters')
+    .select('long_name')
+    .eq('short_name', chapter);
+    const chapter_long = chapter_data[0].long_name;
+
+    return {first_name, chapter_long, role};
+    
+}
+
+
+async function loadUsers() {
+    const { data, error } = await supabase
+        .from('profiles')
+        .select(`*`)
+        .order('active', 'chapter_key', 'last_name', 'first_name')
+    
+        console.log(data)
+
+    if (error) {
+        console.error('Error:', error);
+        document.getElementById('userTableBody').innerHTML = 
+            '<tr><td colspan="5">Error loading data</td></tr>';
+        return;
+    }
+    
+    // Display the data in the table
+    const userTableBody = document.getElementById('userTableBody');
+    userTableBody.innerHTML = '';
+    const filterTrue = true
+
+    
+    data.forEach(row => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = 
+            `<td>${row.first_name}</td>
+            <td>${row.last_name}</td>
+            <td>${row.email}</td>
+            <td>${row.chapter_key}</td>
+            <td>${row.active}</td>
+        `;
+       userTableBody.appendChild(tr);
+
+    });
+
+}
+
+async function editUsers() {
+    const { data, error } = await supabase
+        .from('profiles')
+        .select('*');
+    
+    if (error) {
+        console.error('Error:', error);
+        document.getElementById('userTableBody').innerHTML = 
+            '<tr><td colspan="8">Error loading data</td></tr>';
+        return;
+    }
+    // Display the data in the table
+    const userTableBody = document.getElementById('userTableBody');
+    userTableBody.innerHTML = '';
+    
+    data.forEach(row => {
+        const tr = document.createElement('tr');
+        const row_id = `data-user_id${row.id}`;
+        console.log(row.role)
+        tr.id = row_id;
+        tr.innerHTML = `
+            <td>${row.first_name}</td>
+            <td>${row.last_name}</td>
+            <td>${row.email}</td>
+            <td>${row.chapter_key}</td>
+            <td class="role-cell">${row.role}</td>
+            <td class="active-cell">${row.active}</td>
+            <td>
+                <button class="btn-approve", data-id="${row.id}" data-row="${row_id}"> 
+                    Approve
+                    </button>
+                    </td>
+            <td>
+                <button class="btn-admin" data-id="${row.id}" data-admin="${row.role}" data-row="${row_id}"> 
+                    Adimn?
+                    </button>
+                    </td>
+            <td>
+                <button class="btn-active" data-id="${row.id}" data-active="${row.active}" data-row="${row_id}"> 
+                    Active?
+                    </button>
+                    </td>
+        `;
+
+//        tr.querySelector('.btn-approve').addEventListener('click', () => approveUser(row.id, row_id));
+//        tr.querySelector('.btn-active').addEventListener('click', () => changeActive(row.id, row.active, row_id));
+        userTableBody.appendChild(tr);
     });
     
-    async function waitForServiceWorker() {
-        if ('serviceWorker' in navigator) {
-            try {
-                await navigator.serviceWorker.ready;
-                console.log('Service worker is ready');
-                return true;
-            } catch (err) {
-                console.error('Service worker not available:', err);
-                return false;
-            }
-        }
-        return false;
     }
-    
-    // Modified requestPermission
-    async function requestPermission() {
-        try {
-            // Wait for service worker first
-            const swReady = await waitForServiceWorker();
-            if (!swReady) {
-                alert('Service worker not ready. Please refresh the page.');
-                return;
-            }
-            
-            const permission = await Notification.requestPermission();
-            console.log('Permission:', permission);
-            
-            if (permission === 'granted') {
-                console.log('Getting token...');
-                
-                const token = await getToken(messaging, {
-                    vapidKey: "BPeFoXdfW_5QKbCm9XLAaZYBrNQHudWuyv_-UvY75Yq2DAU2gYm6qu47q8AMWEW_hmtw2MPn83VQUOgJpjF4Yas",
-                });
-            
-                if (token) {
-                    console.log('Token:', token);
-//                    document.getElementById('token').textContent = token;
-                    
-                    // Save to database
-                    await addDoc(collection(db, "fcmTokens"), {
-                        token: token,
-                        createdAt: new Date()
-                    });
-                }
-            }
-        } catch (err) {
-            console.error('Error:', err);
-            alert('Error getting token: ' + err.message);
-        }
+
+
+
+async function approveUser(id, row_id, buttonElement) {
+    const { error } = await supabase
+    .from('profiles')
+    .update({ 'role': 'member'})
+    .eq('id', id);
+    if (error) {
+        console.error('Error change approving member:', error);
+        return;
     }
-    
-    document.getElementById('requestToken')?.addEventListener('click', requestPermission);
-    
-    
-    
-    console.log('[SW] Firebase messaging service worker loaded');
-    
-//Add announcements
-    document.getElementById('addAnnouncementButton').addEventListener('click', async () => {
-        const output = document.getElementById('announcementPosted');
-        const newAnnouncement = document.getElementById('newAnnouncement').value;
-        const postedBy = document.getElementById('postedBy').value;
-        const announcementTypeElement = document.getElementById('announcementType');
-        const announcementTypeIndex = announcementTypeElement.selectedIndex;
-        const announcementTypeOption = announcementTypeElement.options[announcementTypeIndex];
-        const announcementTypeText = announcementTypeOption.text;
-    
-        if (!newAnnouncement.trim()) {
-            output.innerHTML ='Please enter an announcement';
+    const row = buttonElement.closest('tr');
+    const roleCell = row.cells[4];
+    roleCell.textContent = 'member';
+    }
+
+async function changeAdmin(id, role, row_id, buttonElement) {
+    if (role === 'admin') {
+    const { error } = await supabase
+    .from('profiles')
+    .update({ 'role': 'member'})
+    .eq('id', id);
+    if (error) {
+        console.error('Error changing to member:', error);
+        return;
+    }
+    const row = buttonElement.closest('tr');
+    const roleCell = row.cells[4];
+    roleCell.textContent = 'member';
+    } else if (role === 'member') {
+        const { error } = await supabase
+        .from('profiles')
+        .update({'role': 'member'})
+        .eq('id', id);
+        if (error) {
+            console.error('Error changing to admin:', error);
             return;
         }
+        const row = buttonElement.closest('tr');
+        const roleCell = row.cells[4];
+        roleCell.textContent = 'admin';
+      }
+    }
+
     
-        output.innerHTML = 'Announcment Posted!';
-        
+
+async function changeActive(id, active, row_id, buttonElement) {
+    const isActive = active === true || active==='true';
+    const { error } = await supabase
+    .from('profiles')
+    .update({ 'active': !isActive })
+    .eq('id', id)
+    if (error) {
+        console.error('Error change active status:', error);
+        return;
+    }
+    const row = buttonElement.closest('tr');
+    const activeCell = row.cells[5];
+    activeCell.textContent = !isActive;
+    buttonElement.dataset.active = !isActive;
+    }
     
-        console.log('Button clicked, app:', app);
-        console.log('Button clicked, db:', db);
-        
-        try {
-          
-          const docRef = await addDoc(collection(db, "announcements"), {
-            message: newAnnouncement,
-            timestamp: new Date(),
-            postedBy: postedBy,
-            announcementType: announcementTypeText
-          });
-          
-          console.log('Success!');
-//          output.innerHTML = `✅ Success! Document ID: ${docRef.id}`;
-        } catch (error) {
-          output.innerHTML = `❌ Error: ${error.message}`;
-          console.error("Full error:", error);
-        }
-      });
 
-export {app};
-export {db};
-
-// Expose functions to the global scope
-window.getAnnouncements = getAnnouncements;
-window.messaging = getMessaging(app);
-window.app=app
-window.db=db
-
-//window.requestPermission = requestPermission;
-
-
-
+export {supabase};
+window.getLogin=getLogin;
+window.supabase=supabase;
+window.loadAnnouncements=loadAnnouncements;
+window.editAnnouncements=editAnnouncements;
+window.changeVisible=changeVisible;
+window.deleteAnnouncement=deleteAnnouncement;
+window.loadChapters=loadChapters;
+window.loadUsers=loadUsers;
+window.editUsers=editUsers;
+window.approveUser=approveUser;
+window.changeActive=changeActive;
+window.changeAdmin=changeAdmin;
