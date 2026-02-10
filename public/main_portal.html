@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SEIU HCPA Member Portal</title>
+
     <link rel="stylesheet" href="style.css" />
     <link rel="manifest" href="/manifest.json" />
     <meta name="theme-color" content="#FFED00" />
@@ -14,105 +15,253 @@
     <link rel="apple-touch-icon" href="/icons/small.png" />
     <link rel="icon" type="image/x-icon" href="/icons/tiny.png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
-</head>
+  </head>
 <body>
     <div class="topnav" id="myTopnav">
         <a href="#home" class="active">Home</a>
         <a href="#announcement-section">Announcements</a>
         <a href="#myinformation-section">My Information</a>
         <a href="#chapterinformation-section">Chapter Information</a>
+        <a href="index.html" onclick="signOut()">Sign Out</a>
         <a href="#MRC-section">Member Resource Center</a>
         <a href="javascript:void(0);" class="icon" onclick="navMenu()">
           <i class="fa fa-bars"></i>
         </a>
       </div>
+
+
     <div class="main-body">
         <h1 id="portal-name"></h1>
-        <!--if signed in a approved-->
-    <div id="announcement-section">
-      <h1>Add/Edit Announcements</h1>
-      <table id="announcementsTable">
-          <thead>
-              <tr>
-                  <th>Created At</th>
-                  <th>Type</th>
-                  <th>Posted By</th>
-                  <th>Announcement</th>
-                  <th>Visible</th>
-                  <th>Edit</th>
-              </tr>
-          </thead>
-          <tbody id="tableBody">
-              <tr><td colspan="5">Loading...</td></tr>
-          </tbody>
-      </table>
-    </div>
 
-    <div id="myinformation-section">
+        <div class="permission-overlay" id="permissionOverlay">
+          <div class="permission-popup">
+              <h2>Enable Notifications</h2>
+              <p>We'd like to send you updates and personalized messages. You can change this anytime in settings.</p>
+              <div class="permission-buttons">
+                  <button class="btn btn-deny" id="denyBtn">Not Now</button>
+                  <button class="btn btn-allow" id="allowBtn">Allow</button>
+              </div>
+          </div>
+      </div>
+
+        <!--ANNOUNCEMENTS-->
+        <section id="announcement-section">
+          <h2>Announcements</h2>
+          <div class="table-container">
+            <table id="announcementsTable">
+              <thead>
+                <tr>
+                    <th class="col-announce-date">Created At</th>
+                    <th class="col-announce-type">Type</th>
+                    <th class="col-announce-posted">Posted By</th>
+                    <th class="col-announce-text">Announcement</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody">
+                  <tr><td colspan="4">Loading...</td></tr>
+              </tbody>
+          </table>  
+        </div>
+        </section>
+
+
+    <section id="myinformation-section">
       <h2>My Information</h2>
       <p>This will eventually connect to Zoho.
-        Name
-        Address
-        Phone
-        Job Title
-        Dues / COPE information
-        Card
-      </p>
-    </div>
+        The trick would be getting the match correct - based on emails? 
+        If a person isn't matched, could there be a button to a link or form to somehow request to be matched?
+        <ul>
+          <li>Name</li>
+          <li>Address</li>
+          <li>Phone</li>
+          <li>Job Title</li>
+          <li>Dues / COPE information</li>
+          <li>Card</li>
+        </ul>
+      </section>
 
-    <div id="chapterinformation-section">
-      <h2>Chapter Information</h2>
-      <p>Information about your chapter, including contact info for leadership, and facebook page</p>
-    </div>
+      <section id="chapterinformation-section">
+        <h2>Chapter Information</h2>
+        <p>Information about your chapter, including contact info for leadership, and facebook page</p>
+      </section>
 
-    <div id="MRC-section">
+    <section id="MRC-section">
       <h2>Member Resource Center</h2>
       <p>The <a href="https://seiuhcpa.org/resources/help/">Member Resource Center</a> is available to help in solving workplace issues.</p>
-      <p>In Pennsylvania: 1-800-252-3894</p>
-      <p>Out of state: 412-222-9514</p>
-      <br>
+      <p><strong>In Pennsylvania:</strong> 1-800-252-3894</p>
+      <p><strong>Out of state:</strong> 412-222-9514</p>
+    </section>
   </div>
-</div>
-
 
 </body>
-<script>
-</script>
 <script src="/app.js" type="module">   </script>
+
+<script>
+  
+</script>
 <script type="module">
 
-//get logged in status
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getFirestore, collection, addDoc, getDocs, query, orderBy, where } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging.js";
 
-const login_data = await getLogin();
-const role = login_data.role;
-console.log('first')
-console.log(role)
-if (role !== 'admin' && role !== 'member' && role !== 'superuser' && role !== 'organizer') {
-  window.location.replace("status_pending.html");}
-  var x = document.getElementById("myTopnav");
-  if (x.className === "topnav") {
-    x.className += " responsive";
-  } else {
-    x.className = "topnav";
-  }
-  console.log(role);
-  console.log(x);
-  if (role === 'admin' || role === 'organizer' || role === 'superuser') {
-    x.innerHTML = `
-  <a href="#home" class="active">Home</a>
-        <a href="#announcement-section">Announcements</a>
-        <a href="#myinformation-section">My Information</a>
-        <a href="#chapterinformation-section">Chapter Information</a>
-        <a href="#MRC-section">Member Resource Center</a>
-        <a href="admin_portal.html">Admin Portal</a>
-        <a href="javascript:void(0);" class="icon" onclick="navMenu()">
-          <i class="fa fa-bars"></i>
-        </a>`
+//These are meant to be public, it's ok
+const firebaseConfig = {
+    apiKey: "AIzaSyCLQ9bn3zp65FRhxat-QHcVnQfeiehjf3k",
+    authDomain: "hcpa-project-nexus.firebaseapp.com",
+    projectId: "hcpa-project-nexus",
+    storageBucket: "hcpa-project-nexus.firebasestorage.app",
+    messagingSenderId: "276730700584",
+    appId: "1:276730700584:web:9b1047461ce72f3371e61d",
+    measurementId: "G-V2VKZ8FHFV"
 }
 
-const portal_name = document.getElementById("portal-name")
-portal_name.innerHTML = login_data.chapter_long + " Member Portal"
+const app=initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const messaging = getMessaging(app);
 
 
-loadAnnouncements()
+async function initializeMessaging() {
+        try {
+            const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+            console.log('Service Worker registered:', registration);
+            
+            // Wait for service worker to be ready
+            await navigator.serviceWorker.ready;
+            
+            // Now initialize messaging
+            messaging = getMessaging(app);
+            console.log('Firebase Messaging initialized');
+        } catch (error) {
+            console.error('Service Worker registration failed:', error);
+        }
+    }
+
+    
+
+function showPermissionPopup() {
+            document.getElementById('permissionOverlay').classList.add('active');
+        }
+
+        function hidePermissionPopup() {
+    const overlay = document.getElementById('permissionOverlay');
+    console.log('Hiding popup...');
+    console.log('Overlay element:', overlay);
+    console.log('Classes before:', overlay.className);
+    
+    overlay.classList.remove('active');
+    
+    console.log('Classes after:', overlay.className);
+}
+        let VAPID_KEY = null;
+
+// Fetch config on page load
+async function loadFirebaseConfig() {
+    const response = await fetch('/api/firebase-config');
+    const config = await response.json();
+    VAPID_KEY = config.vapidKey;
+}
+        async function allowPermission() {
+            try {
+                const permission = await Notification.requestPermission();
+                
+                if (permission === 'granted') {
+                    console.log('Notification permission granted');
+                    
+                    const token = await getToken(messaging, {
+                        vapidKey: VAPID_KEY
+                    });
+                    
+                    console.log('FCM Token:', token);
+                    
+                    // Save token to your backend/database
+                    // await saveTokenToServer(token);
+                    
+                    localStorage.setItem('messagingPermission', 'granted');
+                    hidePermissionPopup();
+                } else {
+                    console.log('Notification permission denied');
+                    localStorage.setItem('messagingPermission', 'denied');
+                    hidePermissionPopup();
+                }
+            } catch (error) {
+                console.error('Error getting permission:', error);
+                hidePermissionPopup();
+            }
+        }
+
+        function denyPermission() {
+            localStorage.setItem('messagingPermission', 'denied');
+            hidePermissionPopup();
+        }
+
+        // Event listeners
+        document.getElementById('allowBtn').addEventListener('click', () => {
+    console.log('Allow button clicked');
+    allowPermission();
+});
+        document.getElementById('denyBtn').addEventListener('click', denyPermission);
+
+        // Show popup on page load
+        window.addEventListener('load', () => {
+            const permissionStatus = localStorage.getItem('messagingPermission');
+            
+            if (!permissionStatus) {
+                showPermissionPopup();
+            }
+        });
+
+
+//SERIVCE WORKER
+if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(registration => {
+                        console.log('ServiceWorker registered:', registration.scope);
+                    })
+                    .catch(error => {
+                        console.error('ServiceWorker registration failed:', error);
+                    });
+            });
+        }
+
+//AUTH
+
+
+async function initializePage() {
+  try {
+    const login_data = await getLogin();
+    const role = login_data.role;
+    
+    if (!['admin','member','superuser', 'organizer'].includes(role)) {
+      window.location.replace("status_pending.html");
+      return;
+    }
+    const portal_name = document.getElementById("portal-name");
+    portal_name.textContent = `${login_data.chapter} Member Portal`;
+
+    if (['admin','organizer','superuser'].includes(role)) {
+      const nav = document.getElementById("myTopnav");
+      nav.innerHTML = `
+        <a href="#home" class="active">Home</a>
+        <a href="#announcement-section">Announcements</a>
+        <a href="#myinformation-section">My Info</a>
+        <a href="#chapterinformation-section">Chapter</a>
+        <a href="#MRC-section">MRC</a>
+        <a href="index.html" onclick="signOut()">Sign Out</a>
+        <a href="admin_portal.html">Admin</a>
+        <a href="javascript:void(0);" class="icon" onclick="navMenu()">
+          <i class="fa fa-bars"></i>
+        </a>`;
+      }
+
+      await loadAnnouncements();
+  } catch (error) {
+    console.error('Error initializing page: ', error);
+    window.location.replace("index.html");
+  }
+}
+
+initializePage();
+
 </script>

@@ -1,327 +1,317 @@
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
+
 const supabaseUrl = 'https://ijyzgiocbhgqpfsauapm.supabase.co/';
 const supabaseKey = 'sb_publishable_rzM3V_W7Y2kP9juN_vpUIA_2nYrAVOb';
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 
-async function changeVisible(id, visible) {
-    const { error } = await supabase
-    .from('announcements')
-    .update({ 'visible': !visible })
-    .eq('id', id)
-    editAnnouncements()
-    }
+// NAVIGATION SECTION
 
-async function editAnnouncements() {
-    const { data, error } = await supabase
-        .from('announcements')
-        .select('*');
-        if (error) {
-        console.error('Error:', error);
-        document.getElementById('tableBody').innerHTML = 
-            '<tr><td colspan="5">Error loading data</td></tr>';
-        return;
-    }
-        // Display the data in the table
-    const tableBody = document.getElementById('tableBody');
-    tableBody.innerHTML = '';
-        data.forEach(row => {
-            const date = new Date(row.created_at);
-            const year = date.getFullYear();
-            const month = date.getMonth() + 1;
-            const day = date.getDate();
-            const date_to_use = `${month}/${day}/${year}`;
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-            <td>${date_to_use}</td>
-            <td>${row.type}</td>
-            <td>${row.posted_by}</td>
-            <td>${row.announcement_text}</td>
-            <td>${row.visible}</td>
-            <td>
-                <button class="btn-edit"> 
-                    Edit
-                  </button>
-                  </td>
-            <td>
-                <button class="btn-visible" onclick="changeVisible(${row.id}, ${row.visible})"> 
-                    Toggle Visibility
-                  </button>
-                  </td>
-            <td>
-                <button class="btn-delete" onclick="deleteAnnouncement(${row.id})">
-                    Delete
-                  </button>
-                  </td>
-        `;
-        
-        tableBody.appendChild(tr);
-    });
-    tableBody.innerHTML
+async function navMenu() {
+    var x = document.getElementById("myTopnav");
+    const login_data = await getLogin();
+    const role = login_data.role;
 
+    // (fancy if/else statement)
+    x.className = x.className === "topnav" ? "topnav responsive" : "topnav";
+
+    if (['admin', 'organizer', 'superuser'].includes(role)) {
+      x.innerHTML = `
+          <a href="main_portal.html#home" class="active">Home</a>
+          <a href="main_portal.html#announcement-section">Announcements</a>
+          <a href="main_portal.html#myinformation-section">My Info</a>
+          <a href="main_portal.html#chapterinformation-section">Chapter</a>
+          <a href="main_portal.html#MRC-section">MRC</a>
+          <a href="index.html" onclick="signOut()">Sign Out</a>
+          <a href="admin_portal.html">Admin</a>
+          <a href="javascript:void(0);" class="icon" onclick="navMenu()">
+            <i class="fa fa-bars"></i>
+          </a>`
+  }
 }
 
 
-async function deleteAnnouncement(id) {
-    const { error } = await supabase
-    .from('announcements')
-    .update({ 'deleted': true, 'visible': false})
-    .eq('id', id)
-    editAnnouncements()
-    }
-
-async function loadAnnouncements() {
-    const { data, error } = await supabase
-        .from('announcements')
-        .select(`* ORDER by type, created_at 
-            where visible is TRUE and deleted is FALSE`);
-    
-    if (error) {
-        console.error('Error:', error);
-        document.getElementById('tableBody').innerHTML = 
-            '<tr><td colspan="5">Error loading data</td></tr>';
-        return;
-    }
-    
-    // Display the data in the table
-    const tableBody = document.getElementById('tableBody');
-    tableBody.innerHTML = '';
-    const filterTrue = true
-
-    
-    data.forEach(row => {
-        if (row.visible === filterTrue) {
-            const date = new Date(row.created_at);
-            const year = date.getFullYear();
-            const month = date.getMonth() + 1;
-            const day = date.getDate();
-            const date_to_use = `${month}/${day}/${year}`;
-            const tr = document.createElement('tr');
-        tr.innerHTML = 
-            `<td>${date_to_use}</td>
-            <td>${row.type}</td>
-            <td>${row.posted_by}</td>
-            <td>${row.announcement_text}</td>
-        `;
-        tableBody.appendChild(tr);}
-
-    });
-
-}
-
-async function loadChapters() {
-    const { data, error } = await supabase
-        .from('chapters')
-        .select(`id, long_name`)
-        .eq('active', true)
-        .order('long_name') 
-    
-    if (error) {
-        console.error('Error:', error);
-        document.getElementById('selectChapter').innerHTML = 
-            `<tr><td colspan="5">Error loading data</td></tr>`;
-        return;
-    }
-    
-    // Display the data in the table
-    const selectChapterElement = document.getElementById('selectChapter');
-    
-    selectChapterElement.innerHTML = '<option value:"">--Select a chapter ---</option>'
-    
-    data.forEach(row => {
-        const option = document.createElement('option');
-        option.value = row.id;
-        option.textContent = row.long_name;
-        selectChapterElement.appendChild(option)
-    });
-    }
+// AUTHENTICATION
 
 async function getLogin() {
-    const { data, error } = await supabase.auth.getSession()
-    console.log(data.session.user.id)
-    const id= data.session.user.id;
+    try {
+        const { data, error } = await supabase.auth.getSession()
 
-    const { data: data_profiles, error: error_profiles } = await supabase
-        .from('profiles')
-        .select(`*`)
-        .eq('id', id);
-    console.log(data_profiles);
-//    console.log(data_profiles[0].first_name);
-    const first_name = data_profiles[0].first_name;
-    const chapter = data_profiles[0].chapter_key;
-    const role = data_profiles[0].role;
+        if (error) throw error;
 
-    const {data: chapter_data, error: chapter_error} = await supabase
-    .from('chapters')
-    .select('long_name')
-    .eq('short_name', chapter);
-    const chapter_long = chapter_data[0].long_name;
+        if (!data?.session?.user?.id) {
+            throw new Error('No active session');
+        }
 
-    return {first_name, chapter_long, role};
-    
+        const { data: profile, error: profileError } = await supabase
+            .from('profiles')
+            .select('first_name, chapter, role')
+            .eq('id', data.session.user.id)
+            .single();
+        
+        if (profileError) throw profileError;
+
+        return {
+            first_name: profile.first_name,
+            chapter: profile.chapter,
+            role: profile.role
+        };
+    } catch (error) {
+        console.error('Error getting login data:', error);
+//        window.location.replace('index.html');
+        throw error;
+    }
 }
+async function signOut() {
+    const { error } = await supabase.auth.signOut()}
 
+// ANNOUNCEMENTS
 
-async function loadUsers() {
-    const { data, error } = await supabase
-        .from('profiles')
-        .select(`*`)
-        .order('active', 'chapter_key', 'last_name', 'first_name')
-    
-        console.log(data)
+async function loadAnnouncements() {
+    try {
+        const { data, error } = await supabase
+            .from('announcements')
+            .select('*')
+            .eq('visible', true)
+            .eq('deleted', false)
+            .order('type')
+            .order('created_at');
+            
+        if (error) throw error;
 
-    if (error) {
-        console.error('Error:', error);
-        document.getElementById('userTableBody').innerHTML = 
-            '<tr><td colspan="5">Error loading data</td></tr>';
-        return;
-    }
-    
-    // Display the data in the table
-    const userTableBody = document.getElementById('userTableBody');
-    userTableBody.innerHTML = '';
-    const filterTrue = true
+        const tableBody = document.getElementById('tableBody');
 
-    
-    data.forEach(row => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = 
-            `<td>${row.first_name}</td>
-            <td>${row.last_name}</td>
-            <td>${row.email}</td>
-            <td>${row.chapter_key}</td>
-            <td>${row.active}</td>
-        `;
-       userTableBody.appendChild(tr);
-
-    });
-
-}
-
-async function editUsers() {
-    const { data, error } = await supabase
-        .from('profiles')
-        .select('*');
-    
-    if (error) {
-        console.error('Error:', error);
-        document.getElementById('userTableBody').innerHTML = 
-            '<tr><td colspan="8">Error loading data</td></tr>';
-        return;
-    }
-    // Display the data in the table
-    const userTableBody = document.getElementById('userTableBody');
-    userTableBody.innerHTML = '';
-    
-    data.forEach(row => {
-        const tr = document.createElement('tr');
-        const row_id = `data-user_id${row.id}`;
-        console.log(row.role)
-        tr.id = row_id;
-        tr.innerHTML = `
-            <td>${row.first_name}</td>
-            <td>${row.last_name}</td>
-            <td>${row.email}</td>
-            <td>${row.chapter_key}</td>
-            <td class="role-cell">${row.role}</td>
-            <td class="active-cell">${row.active}</td>
-            <td>
-                <button class="btn-approve", data-id="${row.id}" data-row="${row_id}"> 
-                    Approve
-                    </button>
-                    </td>
-            <td>
-                <button class="btn-admin" data-id="${row.id}" data-admin="${row.role}" data-row="${row_id}"> 
-                    Adimn?
-                    </button>
-                    </td>
-            <td>
-                <button class="btn-active" data-id="${row.id}" data-active="${row.active}" data-row="${row_id}"> 
-                    Active?
-                    </button>
-                    </td>
-        `;
-
-//        tr.querySelector('.btn-approve').addEventListener('click', () => approveUser(row.id, row_id));
-//        tr.querySelector('.btn-active').addEventListener('click', () => changeActive(row.id, row.active, row_id));
-        userTableBody.appendChild(tr);
-    });
-    
-    }
-
-
-
-async function approveUser(id, row_id, buttonElement) {
-    const { error } = await supabase
-    .from('profiles')
-    .update({ 'role': 'member'})
-    .eq('id', id);
-    if (error) {
-        console.error('Error change approving member:', error);
-        return;
-    }
-    const row = buttonElement.closest('tr');
-    const roleCell = row.cells[4];
-    roleCell.textContent = 'member';
-    }
-
-async function changeAdmin(id, role, row_id, buttonElement) {
-    if (role === 'admin') {
-    const { error } = await supabase
-    .from('profiles')
-    .update({ 'role': 'member'})
-    .eq('id', id);
-    if (error) {
-        console.error('Error changing to member:', error);
-        return;
-    }
-    const row = buttonElement.closest('tr');
-    const roleCell = row.cells[4];
-    roleCell.textContent = 'member';
-    } else if (role === 'member') {
-        const { error } = await supabase
-        .from('profiles')
-        .update({'role': 'member'})
-        .eq('id', id);
-        if (error) {
-            console.error('Error changing to admin:', error);
+        if(!data || data.length === 0) {
+            tableBody.innerHTML = '<tr><td colspan="4" class="empty-state">No announcements available</td></tr>';
             return;
         }
-        const row = buttonElement.closest('tr');
-        const roleCell = row.cells[4];
-        roleCell.textContent = 'admin';
+
+        tableBody.innerHTML = data.map(row => {
+            const date = new Date(row.created_at);
+            const formattedDate = `${date.getMonth() +1}/${date.getDate()}/${date.getFullYear()}`;
+
+            return `
+            <tr>
+                <td class="col-announce-date" data-label="Date">
+                    ${formattedDate}
+                </td>
+                <td class="col-announce-type" data-label="Type">
+                    ${row.type}
+                </td>
+                <td class="col-announce-posted" data-label="Posted By">
+                    ${row.posted_by}
+                </td>
+                <td class="col-announce-text" data-label="Announcement">
+                    ${row.announcement_text}
+                </td>
+            </tr>
+            `;}).join('');
+    } catch (error) {
+        console.error('Error loading announcements:', error);
+        document.getElementById('tableBody').innerHTML = 
+        '<tr><td colspan="4">Error loading announcements</td></tr>';
+    }
+
+}
+
+//USERS
+
+async function editUsers() {
+    try {
+        const login_info = await getLogin();
+        const chapter = login_info.chapter;
+        
+        let query = supabase
+            .from('profiles')
+            .select('*')
+            .order('role', { ascending: false});
+
+        if (chapter !=='SEIU Healthcare Pennsylvania') {
+            query.eq('chapter', chapter);
+        }
+
+        const { data, error } = await query;
+
+        if (error) throw error;
+
+        const userTableBody = document.getElementById('userTableBody');
+
+        if (!data || data.length === 0) {
+            userTableBody = '<tr><td colspan="7" class="empty-state">No users found</td></tr>';
+            return;
+        }
+
+        userTableBody.innerHTML = data.map(row => `
+        <tr id="user-row-${row.id}">
+            <td class="col-user-first" data-label="First Name">${row.first_name}</td>
+            <td class="col-user-last" data-label="Last Name">${row.last_name}</td>
+            <td class="col-user-email" data-label="Email">${row.email}</td>
+            <td class="col-user-chapter" data-label="Chapter">${row.chapter}</td>
+            <td class="col-user-role" data-label="Role">${row.role}</td>
+            <td class="col-user-active" data-label="Active?">${row.active}</td>
+            <td class="col-user-actions">
+                <button class="btn-approve" data-id="${row.id}"> 
+                    Approve
+                    </button>
+                <button class="btn-active" data-id="${row.id}" data-active="${row.active}"> 
+                    ${row.active ? 'Deactivate' : 'Activate'}
+                </button>
+            </td>
+        </tr>
+        `).join('');
+        setupUserActions();
+
+    } catch (error) {
+        console.error('Error loading users:', error);
+        document.getElementById('userTableBody').innerHTML = 
+            '<tr><td colspan="7">Error loading users</td></tr>';
+    }
+}
+
+async function setupUserActions() {
+    const tableBody = document.getElementById('userTableBody');
+    tableBody.addEventListener('click', async (e) => {
+      const target = e.target;
+
+      if (target.classList.contains('btn-approve')) {
+        const id = target.dataset.id;
+        const confirmed = confirm('Approve this user as a member?');
+
+        if (confirmed) {
+          target.disabled = true;
+          target.textContent = 'Approving...';
+          await approveUser(id, target);
+        }
       }
+
+      if (e.target.classList.contains('btn-active')) {
+          const id = target.dataset.id;
+          const active = target.dataset.active;
+          const action = (active === true || active === 'true' ) ? 'deactivate' : 'activate';
+          const confirmed = confirm(`Are you sure you want to ${action} this users?`)
+
+          if (confirmed) {
+            target.disabled = true;
+            const originalText = target.textContent;
+            target.textContent = 'Updating...';
+
+            try {
+              await changeActive(id, active, target);
+            } catch (error) {
+              target.disabled = false;
+              target.textContent = originalText;
+              alert('Failed to update user status. Please try again.');
+            }
+          }
+      }
+
+      if (target.classList.contains('btn-admin')) {
+                    const id = target.dataset.id;
+                    const role = target.dataset.role;
+                    const action = role === 'admin' ? 'remove admin privileges from' : 'grant admin privileges to';
+                    const confirmed = confirm(`Are you sure you want to ${action} this user?`);
+                    
+                    if (confirmed) {
+                        target.disabled = true;
+                        target.textContent = 'Updating...';
+                        await changeAdmin(id, role, target);
+                    }
+                }
+            });
+        }
+
+async function approveUser(id, buttonElement) {
+    try {
+        const { data, error: fetchError } = await supabase 
+            .from('profiles')
+            .select('role')
+            .eq('id', id)
+            .single();
+        
+        if (fetchError) throw fetchError;
+
+        if (data.role !== 'non-member') {
+            alert('User is already approved.')
+        } 
+
+        if (data.role === 'non-member') {
+            const { error: updateError } = await supabase
+                .from('profiles')
+                .update({ role: 'member'})
+                .eq('id', id);
+            
+            if (updateError) throw updateError;
+
+            const row = buttonElement.closest('tr');
+            const roleCell = row.cells[4];
+            roleCell.textContent = 'member';
+            buttonElement.editUsers = true;
+            buttonElement.textContent = 'Approved';
+        }
+    } catch (error) {
+        console.error('Error approving user:', error);
+        alert('Failed to approve user. Please try again.');
+    }
+}
+
+async function changeActive(id, currentActive, buttonElement) {
+    try {
+        const isActive = currentActive === true || currentActive==='true';
+        const { error } = await supabase
+            .from('profiles')
+            .update({ active: !isActive })
+            .eq('id', id)
+        if (error) throw error;
+    
+        const row = buttonElement.closest('tr');
+        const activeCell = row.cells[5];
+        activeCell.textContent = !isActive;
+        buttonElement.dataset.active = !isActive;
+        buttonElement.textContent = !isActive ? 'Deactivate' : 'Activate';
+        buttonElement.disabled = false;
+
+    } catch (error) {
+        console.error('Error changing active status:', error);
+        alert('Failed to change active status. Please try again.');
+        buttonElement.disabled = false;
+        buttonElement.textContent = currentActive === 'true' || currentActive === true ? 'Deactivate' : 'Activate';
+        throw error;
+    }
+}    
+
+
+// CHAPTERS
+
+
+async function loadChapters() {
+    try {
+        const { data, error } = await supabase
+            .from('chapters')
+            .select(`id, long_name`)
+            .eq('active', true)
+            .order('long_name');
+        
+        if (error) throw error;
+        const selectElement = document.getElementById('selectChapter');
+
+        selectElement.innerHTML = '<option value="">--Select a chapter --</option>' +
+            data.map(row => `<option value="${row.long_name}">${row.long_name}</option>`).join('');
+    } catch (error) {        
+        console.error('Error loading chapters:', error);
+        document.getElementById('selectChapter').innerHTML = 
+                `<option value="">Error loading chapters</option>`;
+        }
     }
 
-    
-
-async function changeActive(id, active, row_id, buttonElement) {
-    const isActive = active === true || active==='true';
-    const { error } = await supabase
-    .from('profiles')
-    .update({ 'active': !isActive })
-    .eq('id', id)
-    if (error) {
-        console.error('Error change active status:', error);
-        return;
-    }
-    const row = buttonElement.closest('tr');
-    const activeCell = row.cells[5];
-    activeCell.textContent = !isActive;
-    buttonElement.dataset.active = !isActive;
-    }
-    
 
 export {supabase};
+
 window.getLogin=getLogin;
 window.supabase=supabase;
 window.loadAnnouncements=loadAnnouncements;
-window.editAnnouncements=editAnnouncements;
-window.changeVisible=changeVisible;
-window.deleteAnnouncement=deleteAnnouncement;
 window.loadChapters=loadChapters;
-window.loadUsers=loadUsers;
 window.editUsers=editUsers;
 window.approveUser=approveUser;
 window.changeActive=changeActive;
-window.changeAdmin=changeAdmin;
+window.navMenu=navMenu;
+window.signOut=signOut;

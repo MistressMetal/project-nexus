@@ -4,16 +4,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="style.css" />
     <title>SEIU HCPA Member Portal</title>
+
+    <link rel="stylesheet" href="style.css" />
     <link rel="stylesheet" href="style.css" />
     <link rel="manifest" href="/manifest.json" />
-    <meta name="theme-color" content="#FFED00" />
+    <meta name="theme-color" content="#794C99" />
+<!--    <meta name="theme-color" content="#FFED00" /> -->
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="Project Nexus" />
     <link rel="apple-touch-icon" href="/icons/small.png" />
     <link rel="icon" type="image/x-icon" href="/icons/tiny.png">
+
 </head>
 <body>
     <div class="container">
@@ -21,48 +24,129 @@
                 <div class="form-section">
                     <h2>Nexus Portal - Login</h2>
                     <p style="margin-bottom: 20px;">Sign in using your email.</p>
+                    
                     <form id="loginForm">
                         <div class="form-group">
                             <label for="loginEmail">Email:</label>
-                            <input class="text-input" type="text" id="loginEmail" required>
+                            <input 
+                                class="text-input" 
+                                type="text" 
+                                id="loginEmail" 
+                                required>
                         </div>
                         <div class="form-group">
                             <label for="loginPassword">Password:</label>
-                            <input type="password" id="loginPassword" required>
+                            <input 
+                                type="password" 
+                                id="loginPassword" 
+                                required>
                         </div>
 
-                        <button class="main-button" type="submit">Login</button>
+                        <button class="main-button" type="submit" id="loginBtn">
+                            Login
+                        </button>
                     </form>
                 </div>
+
+                <div id="errorMessage" style="color: #8a0000; margin-top: 10px; display: none;"></div>
+
                 <p><a href="reset.html">Reset your password</a>.</p>
                 <p>Not registered? <a href="index_signup.html">Sign up</a>.</p>
+
+                <div id="installPrompt" style="display: none; margin-top: 20px; padding: 15pm; background: #f0f0f0; border-radius: 8px;">
+                <p>Install the SEIU Portal on your device for easy access and offline use.</p>
+                <button id="installBtn" class="main-button">Install</button>
+            </div>
         </div> <!--Content-->
     </div><!--container-->
 
 </body>
 <script src="/app.js" type="module">   </script>
 <script type="module">
-    // When login button is pressed
-    document.getElementById('loginForm').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const email = document.getElementById('loginEmail').value;            
-        const password = document.getElementById('loginPassword').value;
-        // try to signin
-        try {
-            const { data, error } = await supabase.auth.signInWithPassword({
-            email: email,
-            password: password,
+
+//SERIVCE WORKER
+if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(registration => {
+                        console.log('ServiceWorker registered:', registration.scope);
+                    })
+                    .catch(error => {
+                        console.error('ServiceWorker registration failed:', error);
+                    });
             });
-            if (error) {
-                console.error('Supabase signin error:', error);
-                alert('Signin failed: ' + error.message);
+        }
+
+//AUTH
+let deferredPrompt;
+        const installPrompt = document.getElementById('installPrompt');
+        const installBtn = document.getElementById('installBtn');
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            installPrompt.style.display = 'block';
+        });
+
+        installBtn.addEventListener('click', async () => {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                console.log(`User response: ${outcome}`);
+                deferredPrompt = null;
+                installPrompt.style.display = 'none';
+            }
+        });
+
+
+
+
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('loginEmail').value;            
+            const password = document.getElementById('loginPassword').value;
+
+            if (!email || !password) {
+                showError('An email and password are required');
                 return;
             }
-            window.location.href='main_portal.html';
-        } catch (error) {
-            console.error('Error:', error);
-            alert('An error occurred: ' + error.message);
-        }
-    });
+            
+            loginBtn.disabled = true;
+            loginBtn.textContent = "Logging in...";
+            errorMessage.style.display = 'none';
 
-</script>
+            try {
+                const { data, error } = await supabase.auth.signInWithPassword({
+                    email: email,
+                    password: password,
+                });
+                
+                if (error) throw error;
+                
+                window.location.href = 'main_portal.html';
+
+            } catch (error) {
+                console.error('Error:', error);
+                showError(getErrorMessage(error));
+                loginBtn.disabled = false;
+                loginBtn.textContent = 'Login';
+            }
+        });
+
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorMessage.style.display = 'block';
+        }
+
+        function getErrorMessage(error) {
+            if (error.message.includes('Invalid login credentials')) {
+                return 'Invalid email or password';
+            } else if (error.message.includes('Email not confirmed')) {
+                return 'Please confirm your email address';
+            } else if (error.message.includes('network')) {
+                return 'Network error. Please check your connection.';
+            }
+            return 'Login failed. Please try again.';
+        }
+    </script>
+    </html>
