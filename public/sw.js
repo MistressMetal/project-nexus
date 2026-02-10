@@ -1,8 +1,16 @@
-const VERSION = "v1.1"
-const CACHE_NAME = `dates-${VERSION}`;
+const VERSION = "v2.0"
+const CACHE_NAME = `nexus-${VERSION}`;
+
+const RUNTIME_CACHE = `seiu-runtime-${VERSION}`;
+
 const APP_STATIC_RESOURCES = [
     "/",
     "/index.html",
+    "main_portal.html",
+    "admin_portal.html",
+    "/index_signup.html",
+    "/reset.html",
+    "/status_pending.html",
     "/style.css",
     "/app.js",
     "/manifest.json",
@@ -11,59 +19,129 @@ const APP_STATIC_RESOURCES = [
     "/icons/tiny.png"
 ];
 
+
+const NETWORK_ONLY = [
+    '/api/',
+    'supabase.co',
+    'auth'
+]
 // instll cache files
 self.addEventListener("install", (event) => {
     event.waitUntil(
-        (async () => {
-            const cache = await caches.open(CACHE_NAME);
-            cache.addAll(APP_STATIC_RESOURCES);
-        })(),
+        caches.open(CACHE_NAME)
+        .then(cache => {
+            console.log('Caching app shell')
+            return cache.addAll(APP_STATIC_RESOURCES);
+        })
+        .then(() => self.skipWaiting())
+        .catch(error => {
+            console.error('Cache failed:', error);
+        })
     );
 });
 
 //clean up caches
 self.addEventListener("activate", (event) => {
+    console.log('[ServiceWorker] Activate event');
+    
     event.waitUntil(
-        (async () => {
-            const names = await caches.keys();
-            await Promise.all(
-                names.map((name) => {
-                    if (name !== CACHE_NAME) {
+        caches.keys().then(cacheNames => {
+            return Promise.all(
+                cacheNames
+                    .filter(name => name.startsWith('seiu-') && name !== CACHE_NAME && name !== RUNTIME_CACHE)
+                    .map(name => {
+                        console.log('[ServiceWorker] Deleting old cache:', name);
                         return caches.delete(name);
-                    }
-                    return undefined;
-                }),
+                    })
             );
-            await clients.claim();
-        })(),
+        }).then(() => self.clients.claim())
     );
 });
 
-// return cache or use network
-// todo do I want to flip this?
 self.addEventListener('fetch', (event) => {
-    // Skip cross-origin requests
-    if (!event.request.url.startsWith(self.location.origin)) {
+    const { request } = event;
+    const url = new URL(request.url);
+
+    // Skip cross-origin requests that aren't to our CDN
+    if (url.origin !== location.origin && !url.href.includes('cdn.jsdelivr.net')) {
         return;
     }
 
-    // Don't cache API calls
-    if (event.request.url.includes('/api/')) {
-        event.respondWith(fetch(event.request));
+    // Network only for API calls and auth
+    if (NETWORK_ONLY.some(pattern => request.url.includes(pattern))) {
+        event.respondWith(fetch(request));
         return;
     }
 
-    event.respondWith(
-        caches.match(event.request)
-            .then((response) => {
-                // Return cached version or fetch from network
-                return response || fetch(event.request).then((fetchResponse) => {
-                    // Cache new requests
-                    return caches.open(CACHE_NAME).then((cache) => {
-                        cache.put(event.request, fetchResponse.clone());
-                        return fetchResponse;
+    // Cache first strategy for static assets
+    if (request.method === 'GET') {
+        event.respondWith(
+            caches.match(request)
+                .then(cachedResponse => {
+                    if (cachedResponse) {
+                        // Return cached version and update cache in background
+                        fetch(request).then(response => {
+                            if (response && response.status === 200) {
+                                caches.open(RUNTIME_CACHE).then(cache => {
+                                    cache.put(request, response);
+                                });
+                            }
+                        }).catch(() => {
+                            // Network failed, but we have cache, so no problem
+                        });
+                        return cachedResponse;
+                    }
+
+                    // Not in cache, fetch from network
+                    return fetch(request).then(response => {
+                        // Don't cache if not a valid response
+                        if (!response || response.status !== 200 || response.type === 'error') {
+                            return response;
+                        }
+
+                        // Clone the response
+                        const responseToCache = response.clone();
+
+                        caches.open(RUNTIME_CACHE).then(cache => {
+                            cache.put(request, responseToCache);
+                        });
+
+                        return response;
+                    }).catch(error => {
+                        console.error('[ServiceWorker] Fetch failed:', error);
+                        
+                        // Return offline page for navigation requests
+                        if (request.mode === 'navigate') {
+                            return caches.match('/index.html');
+                        }
+                        
+                        throw error;
                     });
-                });
-            }));
+                })
+        );
+    }
+});
 
+
+// NOTIFICATIONS
+
+
+self.addEventListener('push', (event) => {
+    const options = {
+        body: event.data ? event.data.text() : 'New notification',
+        icon: '/icons/small.png',
+        badge: '/icons/tiny.png',
+        vibrate: [200, 100, 200]
+    };
+
+    event.waitUntil(
+        self.registration.showNotification('SEIU Portal', options)
+    );
+});
+
+self.addEventListener('notificationclick', (event) => {
+    event.notification.close();
+    event.waitUntil(
+        clients.openWindow('/')
+    );
 });

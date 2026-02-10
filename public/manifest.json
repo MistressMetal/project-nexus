@@ -1,0 +1,27 @@
+{
+  "name": "Project Nexus App v0.1",
+  "short_name": "Project Nexus",
+  "description": "Version 2.0 of the Project Nexus application",
+  "type": "module",
+  "start_url": "/",
+  "scope": "/",
+  "theme_color": "#FFED00",
+  "background_color": "#53327B",
+  "icons": [
+    {
+      "src": "icons/tiny.png",
+      "sizes": "48x48"
+    },
+    {
+      "src": "icons/small.png",
+      "sizes": "72x72 96x96 128x128 256x256",
+      "purpose": "maskable"
+    },
+    {
+      "src": "icons/large.png",
+      "sizes": "512x512"
+    }
+  ],
+  "display": "standalone",
+  "orientation": "portrait"
+}

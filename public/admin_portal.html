@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SEIU HCPA Admin Portal</title>
+
     <link rel="stylesheet" href="style.css" />
     <link rel="manifest" href="/manifest.json" />
     <meta name="theme-color" content="#FFED00" />
@@ -14,128 +15,141 @@
     <link rel="apple-touch-icon" href="/icons/small.png" />
     <link rel="icon" type="image/x-icon" href="/icons/tiny.png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
-</head>
+
+  </head>
 <body>
     <div class="topnav" id="myTopnav">
-        <a href="#home" class="active">Home</a>
-        <a href="#announcement-section">Announcements</a>
-        <a href="#myinformation-section">My Information</a>
-        <a href="#chapterinformation-section">Chapter Information</a>
-        <a href="#MRC-section">Member Resource Center</a>
+        <a href="main_portal.html#home" class="active">Home</a>
+        <a href="main_portal.html#announcement-section">Announcements</a>
+        <a href="main_portal.html#myinformation-section">My Info</a>
+        <a href="main_portal.html#chapterinformation-section">Chapter</a>
+        <a href="main_portal.html#MRC-section">MRC</a>
+        <a href="index.html" onclick="signOut()">Sign Out</a>
         <a href="javascript:void(0);" class="icon" onclick="navMenu()">
           <i class="fa fa-bars"></i>
         </a>
       </div>
     <div class="main-body">
-        <h1 id="portal-name"></h1>
+        <h1 id="portal-name">Loading...</h1>
         <!--if signed in a approved-->
-    <div id="announcement-section">
-      <h2>Announcements</h2>
-      <table id="announcementsTable">
-          <thead>
-              <tr>
-                  <th>Date</th>
-                  <th>Type</th>
-                  <th>Posted By</th>
-                  <th>Announcement</th>
-              </tr>
-          </thead>
-          <tbody id="tableBody">
-              <tr><td colspan="5">Loading...</td></tr>
-          </tbody>
-      </table>  
-    </div>
+        <section id="announcement-section">
+          <h1>Manage Announcements</h1>
+          <p>To add or edit announcements, use <a href="https://docs.google.com/spreadsheets/d/1JysA4VE_OB4IdVX6WIjCiorlLOjfMqtUE3xZSkJpkNM/edit?gid=728664460#gid=728664460">this Google sheet</a>. Request access from Lindsay if you don't have it. <br>
+          Eventually you could maybe do it from here?</p>
+          <div class="table-container">
+            <table id="announcementsTable">
+              <thead>
+                <tr>
+                    <th class="col-announce-date">Created At</th>
+                    <th class="col-announce-type">Type</th>
+                    <th class="col-announce-posted">Posted By</th>
+                    <th class="col-announce-text">Announcement</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody">
+                  <tr><td colspan="4">Loading...</td></tr>
+              </tbody>
+          </table>  
+        </div>
+          </section>
 
-    <div id="users-section">
+    <section id="users-section">
       <h1>Manage Users</h1>
+      <div class="table-container">
       <table id="userTable">
           <thead>
               <tr>
-                  <th>First Name</th>
-                  <th>Last Name</th>
-                  <th>Email</th>
-                  <th>Chapter</th>
-                  <th>Role</th>
-                  <th>Active</th>
-                  <th>Approve</th>
-                  <th>Make Admin</th>
-                  <th>Active?</th>
+                  <th class="col-users-first">First Name</th>
+                  <th class="col-users-last">Last Name</th>
+                  <th class="col-users-email">Email</th>
+                  <th class="col-users-chapter">Chapter</th>
+                  <th class="col-users-role">Role</th>
+                  <th class="col-users-active">Active</th>
+                  <th class="col-users-actions">Actions</th>
               </tr>
           </thead>
           <tbody id="userTableBody">
-              <tr><td colspan="5">Loading...</td></tr>
+              <tr><td colspan="7">Loading...</td></tr>
           </tbody>
       </table>
       </div>
-
-</div>
-
+    </section>
+  </div>
 
 </body>
-<script>
-</script>
 <script src="/app.js" type="module">   </script>
 <script type="module">
+//SERIVCE WORKER
+if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(registration => {
+                        console.log('ServiceWorker registered:', registration.scope);
+                    })
+                    .catch(error => {
+                        console.error('ServiceWorker registration failed:', error);
+                    });
+            });
+        }
 
-//get logged in status
+//AUTH
+async function checkAuthorization() {
+  try {
+    const login_data = await getLogin();
+    const role = login_data.role;
+    
+    if (!['admin','member','superuser', 'organizer'].includes(role)) {
+      window.location.replace("status_pending.html");
+      return;
+    }
 
-const login_data = await getLogin();
-const role = login_data.role;
-console.log('first')
-console.log(role)
-if (role === 'member'){
-  window.location.replace("main_portal.html")
-}
-else if (role !== 'admin' && role !== 'superuser' && role !== 'organizer') {
-  window.location.replace("status_pending.html");}
-  var x = document.getElementById("myTopnav");
-  if (x.className === "topnav") {
-    x.className += " responsive";
-  } else {
-    x.className = "topnav";
-  }
-  console.log(role);
-  console.log(x);
-  if (role === 'admin' || role === 'organizer' || role === 'superuser') {
-    x.innerHTML = `
-  <a href="#home" class="active">Home</a>
+    if (['member'].includes(role)) {
+      window.location.replace('main_portal.html');
+      return;
+    }
+
+    const portal_name = document.getElementById("portal-name");
+    portal_name.textContent = `${login_data.chapter} Member Portal`;
+
+    if (['admin','organizer','superuser'].includes(role)) {
+      const nav = document.getElementById("myTopnav");
+      nav.innerHTML = `
+        <a href="#home" class="active">Home</a>
         <a href="#announcement-section">Announcements</a>
-        <a href="#myinformation-section">My Information</a>
-        <a href="#chapterinformation-section">Chapter Information</a>
-        <a href="#MRC-section">Member Resource Center</a>
-        <a href="admin.html">Admin Portal</a>
+        <a href="#myinformation-section">My Info</a>
+        <a href="#chapterinformation-section">Chapter</a>
+        <a href="#MRC-section">MRC</a>
+        <a href="index.html">Sign Out</a>
+        <a href="admin_portal.html">Admin</a>
         <a href="javascript:void(0);" class="icon" onclick="navMenu()">
           <i class="fa fa-bars"></i>
-        </a>`
+        </a>`;
+      }
+
+  } catch (error) {
+    console.error('Authorization failed: ', error);
+    window.location.replace("index.html");
+    return false;
+  }
 }
 
-document.getElementById('userTableBody').addEventListener('click', async (e) => {
-    if (e.target.classList.contains('btn-approve')) {
-        const id = e.target.dataset.id;
-        const row_id = e.target.dataset.rowId;
-        await approveUser(id, row_id, e.target);
-    }
+await editUsers();
 
-    if (e.target.classList.contains('btn-active')) {
-        const id = e.target.dataset.id;
-        console.log(id)
-        const active = e.target.dataset.active;
-        console.log(active)
-        const row_id = e.target.dataset.row_id;
-        await changeActive(id, active, row_id, e.target);
-    }
 
-    if (e.target.classList.contains('btn-admin')) {
-      const is = e.target.dataset.id;
-      const role = e.target.dataset.role;
-      const row_id = e.target.dataset.row_id;
-      await changeAdmin(id, role, row_id, e.target);
-    }
 
-})
+        async function initializePage() {
+            const authorized = await checkAuthorization();
+            
+            if (authorized) {
+                await editUsers();
+            }
+        }
 
-editUsers();
+//potential to add auto-refresh here, but that seems like it could just be wasting resources?
 
-editAnnouncements();
+
+initializePage();
+loadAnnouncements();
 
 </script>
+</html>
