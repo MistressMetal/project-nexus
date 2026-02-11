@@ -1,7 +1,5 @@
-
 require('dotenv').config();
-
-const express = require('express')
+const express = require('express');
 const { createClient } = require('@supabase/supabase-js');
 
 const app = express();
@@ -20,9 +18,6 @@ const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 app.use(express.static('public'));
 
-
-const fs = require('fs');
-const path = require('path');
 
 app.get('/', (req, res) => {
   let html = fs.readFileSync(path.join(__dirname, 'public', 'index.html'), 'utf8');
