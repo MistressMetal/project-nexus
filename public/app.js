@@ -5,8 +5,7 @@ import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/fireb
 
 
 const supabaseUrl = window.ENV.SUPABASE_URL;
-//const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseKey = 'sb_publishable_rzM3V_W7Y2kP9juN_vpUIA_2nYrAVOb';
+const supabaseKey = window.ENV.SUPABASE_ANON_KEY;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 // FIREBASE
