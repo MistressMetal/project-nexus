@@ -60,3 +60,31 @@ app.get('/main_portal', (req, res) => {
       vapidKey: process.env.FIREBASE_KEY
   });
 });
+
+app.post('/api/save-fcm-token', async (req, res) => {
+  try {
+      const { token, userId } = req.body;
+      
+      console.log('Received FCM token:', token);
+      
+      // Save to your database (example with Supabase)
+      // const { error } = await supabase
+      //     .from('user_tokens')
+      //     .upsert({ 
+      //         user_id: userId,
+      //         fcm_token: token,
+      //         updated_at: new Date()
+      //     });
+      
+      // Or save to Firebase Firestore/Realtime Database
+      // await admin.firestore().collection('tokens').doc(userId).set({
+      //     token: token,
+      //     timestamp: admin.firestore.FieldValue.serverTimestamp()
+      // });
+      
+      res.json({ success: true });
+  } catch (error) {
+      console.error('Error saving token:', error);
+      res.status(500).json({ error: 'Failed to save token' });
+  }
+});
