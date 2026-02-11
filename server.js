@@ -1,8 +1,9 @@
+
 require('dotenv').config();
-const express = require('express');
+
+const express = require('express')
 const { createClient } = require('@supabase/supabase-js');
-const fs = require('fs');
-const path = require('path');
+
 const app = express();
 
 const port = process.env.PORT || 3000;
@@ -21,17 +22,14 @@ app.use(express.static('public'));
 
 
 app.get('/', (req, res) => {
-  let html = fs.readFileSync(path.join(__dirname, 'public', 'index.html'), 'utf8');
-  html = html.replace('</head>', `
-    <script>
-      window.ENV = {
-        SUPABASE_URL: '${process.env.SUPABASE_URL}',
-        SUPABASE_ANON_KEY: '${process.env.SUPABASE_ANON_KEY}'
-      };
-    </script>
-    </head>
-  `);
-  res.send(html);
+    res.send('Server is running and connected to Supabase environment variables.');
+  });
+
+  app.get('/api/config', (req, res) => {
+    res.json({
+        supabaseUrl: process.env.SUPABASE_URL,
+        supabaseAnonKey: process.env.SUPABASE_ANON_KEY
+    });
 });
 
   // Route to fetch example data from a 'posts' table (replace with your table name)
