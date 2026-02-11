@@ -3,11 +3,12 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebas
 import { getFirestore, collection, addDoc, getDocs, query, orderBy, where } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging.js";
 
-const supabaseUrl = 'https://ijyzgiocbhgqpfsauapm.supabase.co/';
+const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = 'sb_publishable_rzM3V_W7Y2kP9juN_vpUIA_2nYrAVOb';
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-// Firebase Configuration
+// FIREBASE
+//This are ok to be public, don't worry.
 const firebaseConfig = {
     apiKey: "AIzaSyCLQ9bn3zp65FRhxat-QHcVnQfeiehjf3k",
     authDomain: "hcpa-project-nexus.firebaseapp.com",
@@ -23,11 +24,11 @@ const db = getFirestore(app);
 const messaging = getMessaging(app);
 
 // VAPID Key
-const VAPID_KEY = "BPeFoXdfW_5QKbCm9XLAaZYBrNQHudWuyv_-UvY75Yq2DAU2gYm6qu47q8AMWEW_hmtw2MPn83VQUOgJpjF4Yas";
+const VAPID_KEY = process.env.VAPID_KEY;
 
 let serviceWorkerRegistration = null;
 
-// Enhanced Service Worker Registration with Skip Waiting
+// SERVICE WORKER
 async function registerServiceWorker() {
     if (!('serviceWorker' in navigator)) {
         console.error('Service workers are not supported');
@@ -37,49 +38,44 @@ async function registerServiceWorker() {
     try {
         console.log('Registering service worker...');
         
-        // First, unregister any existing service workers to start fresh
+        // Unregister <- do I want/need this for final?
         const existingRegistrations = await navigator.serviceWorker.getRegistrations();
         for (let registration of existingRegistrations) {
             console.log('Unregistering old service worker:', registration.scope);
             await registration.unregister();
         }
         
-        // Small delay to ensure cleanup
         await new Promise(resolve => setTimeout(resolve, 100));
         
-        // Register the service worker
         const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js', {
             scope: '/'
         });
         
-        console.log('✓ Service worker registered with scope:', registration.scope);
+        console.log('Service worker registered:', registration.scope);
         
-        // Handle the waiting service worker by telling it to skip waiting
         if (registration.waiting) {
             console.log('Service worker is waiting, sending skip waiting message...');
             registration.waiting.postMessage({ type: 'SKIP_WAITING' });
         }
         
-        // Handle installing service worker
+        // Install
         if (registration.installing) {
             console.log('Service worker is installing...');
             registration.installing.postMessage({ type: 'SKIP_WAITING' });
         }
         
-        // Listen for controller change (when new SW takes over)
         navigator.serviceWorker.addEventListener('controllerchange', () => {
-            console.log('✓ New service worker activated!');
+            console.log('New SW');
         });
         
-        // Wait for the service worker to be ready
+
         await navigator.serviceWorker.ready;
-        console.log('✓ Service worker ready');
+        console.log('SW ready');
         
-        // Get the active registration
+
         const activeRegistration = await navigator.serviceWorker.getRegistration();
         
         if (!activeRegistration?.active) {
-            // If still not active, reload the page
             console.log('Service worker not active, reloading page...');
             window.location.reload();
             return null;
@@ -95,29 +91,28 @@ async function registerServiceWorker() {
     }
 }
 
-// Initialize on load
+
 registerServiceWorker();
 
-// Request Notification Permission
+// NOTIFICATIONS
 async function requestPermission() {
     try {
-        console.log('=== Starting permission request ===');
+        console.log('Starting permission request');
         
-        // Check if we already have an active service worker
         const currentReg = await navigator.serviceWorker.getRegistration();
         
         if (!currentReg?.active) {
-            console.log('No active service worker, registering...');
+            console.log('Registering SW');
             serviceWorkerRegistration = await registerServiceWorker();
             
             if (!serviceWorkerRegistration) {
-                alert('Failed to activate service worker. The page will reload to try again.');
+                alert('SW failed, reload.');
                 window.location.reload();
                 return;
             }
         } else {
             serviceWorkerRegistration = currentReg;
-            console.log('✓ Using existing active service worker');
+            console.log('SW already exists');
         }
         
         console.log('Service worker state:', {
@@ -131,7 +126,7 @@ async function requestPermission() {
         console.log('Permission result:', permission);
         
         if (permission === 'granted') {
-            console.log('✓ Notification permission granted');
+            console.log('Permission Granted');
             console.log('Getting FCM token...');
             
             const token = await getToken(messaging, {
@@ -140,32 +135,30 @@ async function requestPermission() {
             });
         
             if (token) {
-                console.log('✓ FCM Token:', token);
+                console.log('Have Token', token);
                 
-                // Save to localStorage
                 localStorage.setItem('messagingPermission', 'granted');
                 localStorage.setItem('fcmToken', token);
-                console.log('✓ Saved to localStorage');
+                console.log('Saved');
                 
-                // Save to Firestore
                 try {
                     await addDoc(collection(db, "fcmTokens"), {
                         token: token,
                         createdAt: new Date()
                     });
-                    console.log('✓ Token saved to Firestore');
+                    console.log('Saved to FS');
                 } catch (firestoreError) {
-                    console.error('Error saving to Firestore:', firestoreError);
+                    console.error('Error saving to FS:', firestoreError);
                 }
                 
-                // Hide popup
+                // don't see popup
                 document.getElementById('permissionOverlay').style.display = 'none';
                 alert('Notifications enabled successfully!');
             } else {
                 console.error('Token is empty');
             }
         } else {
-            console.log('✗ Notification permission denied');
+            console.log('Notification permission denied');
             localStorage.setItem('messagingPermission', 'denied');
             document.getElementById('permissionOverlay').style.display = 'none';
         }
@@ -178,20 +171,20 @@ async function requestPermission() {
     }
 }
 
-// Deny Permission
+
 function denyPermission() {
     console.log('User denied permission');
     localStorage.setItem('messagingPermission', 'denied');
     document.getElementById('permissionOverlay').style.display = 'none';
 }
 
-// Handle foreground messages
+// get notifications
 onMessage(messaging, (payload) => {
     console.log('🔔 Message received:', payload);
     alert(`${payload.notification.title}: ${payload.notification.body}`);
 });
 
-// Attach event listeners when DOM is ready
+// wait for page to load
 document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('requestToken')?.addEventListener('click', requestPermission);
     document.getElementById('denyToken')?.addEventListener('click', denyPermission);
