@@ -1,7 +1,7 @@
 {
-  "name": "Project Nexus App v0.1",
+  "name": "Project Nexus App v2.0",
   "short_name": "Project Nexus",
-  "description": "Version 0.1 of the Project Nexus application",
+  "description": "Version 2.0 of the Project Nexus application",
   "type": "module",
   "start_url": "/",
   "scope": "/",
@@ -24,4 +24,5 @@
   ],
   "display": "standalone",
   "orientation": "portrait"
+
 }
