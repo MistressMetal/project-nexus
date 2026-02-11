@@ -1,18 +1,208 @@
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getFirestore, collection, addDoc, getDocs, query, orderBy, where } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging.js";
 
 const supabaseUrl = 'https://ijyzgiocbhgqpfsauapm.supabase.co/';
 const supabaseKey = 'sb_publishable_rzM3V_W7Y2kP9juN_vpUIA_2nYrAVOb';
 const supabase = createClient(supabaseUrl, supabaseKey);
 
+// Firebase Configuration
+const firebaseConfig = {
+    apiKey: "AIzaSyCLQ9bn3zp65FRhxat-QHcVnQfeiehjf3k",
+    authDomain: "hcpa-project-nexus.firebaseapp.com",
+    projectId: "hcpa-project-nexus",
+    storageBucket: "hcpa-project-nexus.firebasestorage.app",
+    messagingSenderId: "276730700584",
+    appId: "1:276730700584:web:9b1047461ce72f3371e61d",
+    measurementId: "G-V2VKZ8FHFV"
+}
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const messaging = getMessaging(app);
+
+// VAPID Key
+const VAPID_KEY = "BPeFoXdfW_5QKbCm9XLAaZYBrNQHudWuyv_-UvY75Yq2DAU2gYm6qu47q8AMWEW_hmtw2MPn83VQUOgJpjF4Yas";
+
+let serviceWorkerRegistration = null;
+
+// Enhanced Service Worker Registration with Skip Waiting
+async function registerServiceWorker() {
+    if (!('serviceWorker' in navigator)) {
+        console.error('Service workers are not supported');
+        return null;
+    }
+
+    try {
+        console.log('Registering service worker...');
+        
+        // First, unregister any existing service workers to start fresh
+        const existingRegistrations = await navigator.serviceWorker.getRegistrations();
+        for (let registration of existingRegistrations) {
+            console.log('Unregistering old service worker:', registration.scope);
+            await registration.unregister();
+        }
+        
+        // Small delay to ensure cleanup
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        // Register the service worker
+        const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js', {
+            scope: '/'
+        });
+        
+        console.log('✓ Service worker registered with scope:', registration.scope);
+        
+        // Handle the waiting service worker by telling it to skip waiting
+        if (registration.waiting) {
+            console.log('Service worker is waiting, sending skip waiting message...');
+            registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+        }
+        
+        // Handle installing service worker
+        if (registration.installing) {
+            console.log('Service worker is installing...');
+            registration.installing.postMessage({ type: 'SKIP_WAITING' });
+        }
+        
+        // Listen for controller change (when new SW takes over)
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+            console.log('✓ New service worker activated!');
+        });
+        
+        // Wait for the service worker to be ready
+        await navigator.serviceWorker.ready;
+        console.log('✓ Service worker ready');
+        
+        // Get the active registration
+        const activeRegistration = await navigator.serviceWorker.getRegistration();
+        
+        if (!activeRegistration?.active) {
+            // If still not active, reload the page
+            console.log('Service worker not active, reloading page...');
+            window.location.reload();
+            return null;
+        }
+        
+        console.log('✓ Service worker is ACTIVE');
+        serviceWorkerRegistration = activeRegistration;
+        return activeRegistration;
+        
+    } catch (err) {
+        console.error('✗ Service worker registration failed:', err);
+        return null;
+    }
+}
+
+// Initialize on load
+registerServiceWorker();
+
+// Request Notification Permission
+async function requestPermission() {
+    try {
+        console.log('=== Starting permission request ===');
+        
+        // Check if we already have an active service worker
+        const currentReg = await navigator.serviceWorker.getRegistration();
+        
+        if (!currentReg?.active) {
+            console.log('No active service worker, registering...');
+            serviceWorkerRegistration = await registerServiceWorker();
+            
+            if (!serviceWorkerRegistration) {
+                alert('Failed to activate service worker. The page will reload to try again.');
+                window.location.reload();
+                return;
+            }
+        } else {
+            serviceWorkerRegistration = currentReg;
+            console.log('✓ Using existing active service worker');
+        }
+        
+        console.log('Service worker state:', {
+            active: serviceWorkerRegistration.active ? 'yes' : 'no',
+            installing: serviceWorkerRegistration.installing ? 'yes' : 'no',
+            waiting: serviceWorkerRegistration.waiting ? 'yes' : 'no'
+        });
+        
+        // Request notification permission
+        const permission = await Notification.requestPermission();
+        console.log('Permission result:', permission);
+        
+        if (permission === 'granted') {
+            console.log('✓ Notification permission granted');
+            console.log('Getting FCM token...');
+            
+            const token = await getToken(messaging, {
+                vapidKey: VAPID_KEY,
+                serviceWorkerRegistration: serviceWorkerRegistration
+            });
+        
+            if (token) {
+                console.log('✓ FCM Token:', token);
+                
+                // Save to localStorage
+                localStorage.setItem('messagingPermission', 'granted');
+                localStorage.setItem('fcmToken', token);
+                console.log('✓ Saved to localStorage');
+                
+                // Save to Firestore
+                try {
+                    await addDoc(collection(db, "fcmTokens"), {
+                        token: token,
+                        createdAt: new Date()
+                    });
+                    console.log('✓ Token saved to Firestore');
+                } catch (firestoreError) {
+                    console.error('Error saving to Firestore:', firestoreError);
+                }
+                
+                // Hide popup
+                document.getElementById('permissionOverlay').style.display = 'none';
+                alert('Notifications enabled successfully!');
+            } else {
+                console.error('Token is empty');
+            }
+        } else {
+            console.log('✗ Notification permission denied');
+            localStorage.setItem('messagingPermission', 'denied');
+            document.getElementById('permissionOverlay').style.display = 'none';
+        }
+    } catch (err) {
+        console.error('✗ Error:', err);
+        console.error('Error message:', err.message);
+        console.error('Error stack:', err.stack);
+        localStorage.setItem('messagingPermission', 'error');
+        alert('Error: ' + err.message);
+    }
+}
+
+// Deny Permission
+function denyPermission() {
+    console.log('User denied permission');
+    localStorage.setItem('messagingPermission', 'denied');
+    document.getElementById('permissionOverlay').style.display = 'none';
+}
+
+// Handle foreground messages
+onMessage(messaging, (payload) => {
+    console.log('🔔 Message received:', payload);
+    alert(`${payload.notification.title}: ${payload.notification.body}`);
+});
+
+// Attach event listeners when DOM is ready
+document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('requestToken')?.addEventListener('click', requestPermission);
+    document.getElementById('denyToken')?.addEventListener('click', denyPermission);
+});
 
 // NAVIGATION SECTION
-
 async function navMenu() {
     var x = document.getElementById("myTopnav");
     const login_data = await getLogin();
     const role = login_data.role;
 
-    // (fancy if/else statement)
     x.className = x.className === "topnav" ? "topnav responsive" : "topnav";
 
     if (['admin', 'organizer', 'superuser'].includes(role)) {
@@ -30,9 +220,7 @@ async function navMenu() {
   }
 }
 
-
 // AUTHENTICATION
-
 async function getLogin() {
     try {
         const { data, error } = await supabase.auth.getSession()
@@ -58,15 +246,15 @@ async function getLogin() {
         };
     } catch (error) {
         console.error('Error getting login data:', error);
-//        window.location.replace('index.html');
         throw error;
     }
 }
+
 async function signOut() {
-    const { error } = await supabase.auth.signOut()}
+    const { error } = await supabase.auth.signOut();
+}
 
 // ANNOUNCEMENTS
-
 async function loadAnnouncements() {
     try {
         const { data, error } = await supabase
@@ -111,11 +299,9 @@ async function loadAnnouncements() {
         document.getElementById('tableBody').innerHTML = 
         '<tr><td colspan="4">Error loading announcements</td></tr>';
     }
-
 }
 
-//USERS
-
+// USERS
 async function editUsers() {
     try {
         const login_info = await getLogin();
@@ -206,19 +392,19 @@ async function setupUserActions() {
       }
 
       if (target.classList.contains('btn-admin')) {
-                    const id = target.dataset.id;
-                    const role = target.dataset.role;
-                    const action = role === 'admin' ? 'remove admin privileges from' : 'grant admin privileges to';
-                    const confirmed = confirm(`Are you sure you want to ${action} this user?`);
-                    
-                    if (confirmed) {
-                        target.disabled = true;
-                        target.textContent = 'Updating...';
-                        await changeAdmin(id, role, target);
-                    }
-                }
-            });
-        }
+          const id = target.dataset.id;
+          const role = target.dataset.role;
+          const action = role === 'admin' ? 'remove admin privileges from' : 'grant admin privileges to';
+          const confirmed = confirm(`Are you sure you want to ${action} this user?`);
+          
+          if (confirmed) {
+              target.disabled = true;
+              target.textContent = 'Updating...';
+              await changeAdmin(id, role, target);
+          }
+      }
+    });
+}
 
 async function approveUser(id, buttonElement) {
     try {
@@ -279,10 +465,7 @@ async function changeActive(id, currentActive, buttonElement) {
     }
 }    
 
-
 // CHAPTERS
-
-
 async function loadChapters() {
     try {
         const { data, error } = await supabase
@@ -300,18 +483,21 @@ async function loadChapters() {
         console.error('Error loading chapters:', error);
         document.getElementById('selectChapter').innerHTML = 
                 `<option value="">Error loading chapters</option>`;
-        }
     }
+}
 
-
+// Export functions
 export {supabase};
 
-window.getLogin=getLogin;
-window.supabase=supabase;
-window.loadAnnouncements=loadAnnouncements;
-window.loadChapters=loadChapters;
-window.editUsers=editUsers;
-window.approveUser=approveUser;
-window.changeActive=changeActive;
-window.navMenu=navMenu;
-window.signOut=signOut;
+window.getLogin = getLogin;
+window.supabase = supabase;
+window.loadAnnouncements = loadAnnouncements;
+window.loadChapters = loadChapters;
+window.editUsers = editUsers;
+window.approveUser = approveUser;
+window.changeActive = changeActive;
+window.navMenu = navMenu;
+window.signOut = signOut;
+window.messaging = messaging;
+window.app = app;
+window.db = db;

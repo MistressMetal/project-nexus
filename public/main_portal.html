@@ -33,17 +33,18 @@
     <div class="main-body">
         <h1 id="portal-name"></h1>
 
-        <div class="permission-overlay" id="permissionOverlay">
+        <!-- Permission Popup -->
+        <div class="permission-overlay" id="permissionOverlay" style="display: none;">
           <div class="permission-popup">
               <h2>Enable Notifications</h2>
               <p>We'd like to send you updates and personalized messages. You can change this anytime in settings.</p>
               <div class="permission-buttons">
-                  <button class="btn btn-deny" id="denyBtn">Not Now</button>
-                  <button class="btn btn-allow" id="allowBtn">Allow</button>
+                  <button class="btn btn-allow" id="requestToken">Allow</button>
+                  <button class="btn btn-deny" id="denyToken">Not Now</button>
               </div>
           </div>
-      </div>
-
+        </div>    
+        
         <!--ANNOUNCEMENTS-->
         <section id="announcement-section">
           <h2>Announcements</h2>
@@ -94,140 +95,9 @@
   </div>
 
 </body>
-<script src="/app.js" type="module">   </script>
+<script src="/app.js" type="module"></script>
 
-<script>
-  
-</script>
 <script type="module">
-
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, collection, addDoc, getDocs, query, orderBy, where } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging.js";
-
-//These are meant to be public, it's ok
-const firebaseConfig = {
-    apiKey: "AIzaSyCLQ9bn3zp65FRhxat-QHcVnQfeiehjf3k",
-    authDomain: "hcpa-project-nexus.firebaseapp.com",
-    projectId: "hcpa-project-nexus",
-    storageBucket: "hcpa-project-nexus.firebasestorage.app",
-    messagingSenderId: "276730700584",
-    appId: "1:276730700584:web:9b1047461ce72f3371e61d",
-    measurementId: "G-V2VKZ8FHFV"
-}
-
-const app=initializeApp(firebaseConfig);
-const db = getFirestore(app);
-const messaging = getMessaging(app);
-
-
-async function initializeMessaging() {
-        try {
-            const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
-            console.log('Service Worker registered:', registration);
-            
-            // Wait for service worker to be ready
-            await navigator.serviceWorker.ready;
-            
-            // Now initialize messaging
-            messaging = getMessaging(app);
-            console.log('Firebase Messaging initialized');
-        } catch (error) {
-            console.error('Service Worker registration failed:', error);
-        }
-    }
-
-    
-
-function showPermissionPopup() {
-            document.getElementById('permissionOverlay').classList.add('active');
-        }
-
-        function hidePermissionPopup() {
-    const overlay = document.getElementById('permissionOverlay');
-    console.log('Hiding popup...');
-    console.log('Overlay element:', overlay);
-    console.log('Classes before:', overlay.className);
-    
-    overlay.classList.remove('active');
-    
-    console.log('Classes after:', overlay.className);
-}
-        let VAPID_KEY = null;
-
-// Fetch config on page load
-async function loadFirebaseConfig() {
-    const response = await fetch('/api/firebase-config');
-    const config = await response.json();
-    VAPID_KEY = config.vapidKey;
-}
-        async function allowPermission() {
-            try {
-                const permission = await Notification.requestPermission();
-                
-                if (permission === 'granted') {
-                    console.log('Notification permission granted');
-                    
-                    const token = await getToken(messaging, {
-                        vapidKey: VAPID_KEY
-                    });
-                    
-                    console.log('FCM Token:', token);
-                    
-                    // Save token to your backend/database
-                    // await saveTokenToServer(token);
-                    
-                    localStorage.setItem('messagingPermission', 'granted');
-                    hidePermissionPopup();
-                } else {
-                    console.log('Notification permission denied');
-                    localStorage.setItem('messagingPermission', 'denied');
-                    hidePermissionPopup();
-                }
-            } catch (error) {
-                console.error('Error getting permission:', error);
-                hidePermissionPopup();
-            }
-        }
-
-        function denyPermission() {
-            localStorage.setItem('messagingPermission', 'denied');
-            hidePermissionPopup();
-        }
-
-        // Event listeners
-        document.getElementById('allowBtn').addEventListener('click', () => {
-    console.log('Allow button clicked');
-    allowPermission();
-});
-        document.getElementById('denyBtn').addEventListener('click', denyPermission);
-
-        // Show popup on page load
-        window.addEventListener('load', () => {
-            const permissionStatus = localStorage.getItem('messagingPermission');
-            
-            if (!permissionStatus) {
-                showPermissionPopup();
-            }
-        });
-
-
-//SERIVCE WORKER
-if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('/sw.js')
-                    .then(registration => {
-                        console.log('ServiceWorker registered:', registration.scope);
-                    })
-                    .catch(error => {
-                        console.error('ServiceWorker registration failed:', error);
-                    });
-            });
-        }
-
-//AUTH
-
-
 async function initializePage() {
   try {
     const login_data = await getLogin();
@@ -256,12 +126,24 @@ async function initializePage() {
       }
 
       await loadAnnouncements();
+      
+      // Check notification permission and show popup if needed
+      checkNotificationPermission();
+      
   } catch (error) {
     console.error('Error initializing page: ', error);
     window.location.replace("index.html");
   }
 }
 
-initializePage();
+function checkNotificationPermission() {
+    const permissionStatus = localStorage.getItem('messagingPermission');
+    
+    if (!permissionStatus) {
+        document.getElementById('permissionOverlay').style.display = 'flex';
+    }
+}
 
+initializePage();
 </script>
+</html>
