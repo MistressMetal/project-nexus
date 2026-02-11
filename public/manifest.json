@@ -1,5 +1,5 @@
 {
-  "name": "Project Nexus App v0.1",
+  "name": "Project Nexus App v2.0",
   "short_name": "Project Nexus",
   "description": "Version 2.0 of the Project Nexus application",
   "type": "module",
@@ -24,4 +24,5 @@
   ],
   "display": "standalone",
   "orientation": "portrait"
+
 }
