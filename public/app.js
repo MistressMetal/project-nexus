@@ -3,7 +3,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebas
 import { getFirestore, collection, addDoc, getDocs, query, orderBy, where } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging.js";
 
-const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseKey = 'sb_publishable_rzM3V_W7Y2kP9juN_vpUIA_2nYrAVOb';
 const supabase = createClient(supabaseUrl, supabaseKey);
 
@@ -24,7 +24,7 @@ const db = getFirestore(app);
 const messaging = getMessaging(app);
 
 // VAPID Key
-const VAPID_KEY = process.env.VAPID_KEY;
+const VAPID_KEY = process.env.NEXT_PUBLIC_VAPID_KEY;
 
 let serviceWorkerRegistration = null;
 
