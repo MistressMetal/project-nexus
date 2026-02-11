@@ -38,13 +38,6 @@ app.get('/', (req, res) => {
   res.send(html);
 });
 
-  app.get('/api/config', (req, res) => {
-    res.json({
-        supabaseUrl: process.env.SUPABASE_URL,
-        supabaseAnonKey: process.env.SUPABASE_ANON_KEY
-    });
-});
-
   // Route to fetch example data from a 'posts' table (replace with your table name)
   app.get('/profiles', async (req, res) => {
     try {
