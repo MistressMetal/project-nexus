@@ -21,9 +21,22 @@ const supabase = createClient(supabaseUrl, supabaseAnonKey);
 app.use(express.static('public'));
 
 
+const fs = require('fs');
+const path = require('path');
+
 app.get('/', (req, res) => {
-    res.send('Server is running and connected to Supabase environment variables.');
-  });
+  let html = fs.readFileSync(path.join(__dirname, 'public', 'index.html'), 'utf8');
+  html = html.replace('</head>', `
+    <script>
+      window.ENV = {
+        SUPABASE_URL: '${process.env.SUPABASE_URL}',
+        SUPABASE_ANON_KEY: '${process.env.SUPABASE_ANON_KEY}'
+      };
+    </script>
+    </head>
+  `);
+  res.send(html);
+});
 
   app.get('/api/config', (req, res) => {
     res.json({
