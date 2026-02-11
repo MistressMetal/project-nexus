@@ -106,6 +106,7 @@
   color: var(--font-black);
 }
 
+/* Icon/Visual Element (optional) */
 .permission-popup::before {
   content: "🔔";
   display: block;
@@ -115,7 +116,7 @@
   filter: grayscale(0.3);
 }
 
-/* Mobile */
+/* Mobile Optimization */
 @media (max-width: 480px) {
   .permission-popup {
     padding: 24px 20px;
@@ -144,7 +145,7 @@
   }
 }
 
-/* landscape */
+/* Landscape mode on small devices */
 @media (max-height: 600px) and (orientation: landscape) {
   .permission-popup {
     max-height: 90vh;
@@ -171,6 +172,7 @@
   }
 }
 
+/* Tablet */
 @media (min-width: 481px) and (max-width: 768px) {
   .permission-popup {
     max-width: 400px;
@@ -178,6 +180,7 @@
   }
 }
 
+/* Dark mode support (optional) */
 @media (prefers-color-scheme: dark) {
   .permission-popup {
     background: #1a1a1a;
@@ -446,6 +449,7 @@ button:disabled,
   cursor: not-allowed;
 }
 
+/* Primary Button */
 .main-button,
 button[type="submit"] {
   background: linear-gradient(44deg, var(--seiu-purple-dark) 10%, var(--seiu-purple-light) 86.44%);
@@ -454,6 +458,7 @@ button[type="submit"] {
   margin-top: 10px;
 }
 
+/* Action Buttons */
 .btn-approve,
 .btn-active,
 .btn-edit {
@@ -479,6 +484,7 @@ button[type="submit"] {
   color: white;
 }
 
+/* Secondary Buttons */
 .btn-secondary {
   background: var(--seiu-gold);
   color: #333;
@@ -754,7 +760,7 @@ tr:hover {
 }
 
 
-<-- delete
+
 .form-group {
     display: flex;
 flex-direction: column;
@@ -885,7 +891,7 @@ border-radius: 100px;
 color: var(--Monochromatic-09, #F2F2F2);
 background: linear-gradient(44deg, #572A77 10%, #AC62CF 86.44%);
 }
--->
+
 /** here is where the new stuff starts and should be cleared out when needed **/
 
 :root {
